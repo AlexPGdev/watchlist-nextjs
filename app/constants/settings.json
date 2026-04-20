@@ -1,0 +1,8 @@
+{
+    "primaryColor": "0, 255, 255",
+    "primaryColorDark": "0, 205, 205",
+    "secondaryColor": "255, 0, 255",
+    "secondaryColorDark": "170, 0, 170",
+    "localhostApi": "http://localhost:8080/api",
+    "androidApi": "http://10.0.2.2:8080/api"
+}
