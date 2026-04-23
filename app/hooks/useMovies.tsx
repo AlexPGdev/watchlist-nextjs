@@ -112,7 +112,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
     const loadMovies = useCallback(async () => {
         console.log("LOADING MOVIES 1")
         setLoading(true);
-        fetch(`http://localhost:8080/api/page`, {
+        fetch(`https://api.spectaer.com/watchlist/api/page`, {
             "method": "GET",
             "headers": {
                 "Content-Type": "application/json",
@@ -157,7 +157,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
             console.log(tmdbId)
             console.log(mediaType)
             
-            const response = await fetch(`http://localhost:8080/api/page-content?tmdbId=${tmdbId}&type=${mediaType}`, {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content?tmdbId=${tmdbId}&type=${mediaType}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -180,7 +180,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
             console.log(addedMovie)
 
             if(logged) {
-                const response = await fetch(`http://localhost:8080/api/page-content/${addedMovie.id}/watch?logged=${logged}`, {
+                const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${addedMovie.id}/watch?logged=${logged}`, {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
@@ -219,7 +219,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
         setFilteredMovies(prev => prev.filter(m => m.id !== id));
         
         try {
-            const response = await fetch(`http://localhost:8080/api/page-content/${id}`, {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -290,7 +290,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/page-content/${content.id}/${toggleType() === "started" ? "start" : "watch"}`, {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${content.id}/${toggleType() === "started" ? "start" : "watch"}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -310,7 +310,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
     const loadExternalRatings = async (tmdbId: string, title: string, type: string, movieId: number, onRatingsUpdated?: (ratings: any) => void) => {
         try {
             console.log("LOADING EXTERNAL RATINGS")
-            const response = await fetch(`http://localhost:8080/api/content/${tmdbId}/ratings?title=${title}&type=${type}`, {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/content/${tmdbId}/ratings?title=${title}&type=${type}`, {
                 credentials: "include",
                 method: "PATCH"
             })
@@ -357,7 +357,7 @@ export const MoviesProvider = memo(function MoviesProvider({ children }: { child
         });
 
         try {
-            const response = await fetch(`http://localhost:8080/api/page-content/${id}/favorite`, {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}/favorite`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -24,7 +24,7 @@ export function useAuth() {
   const checkAuthStatus = async () => {
     try {
       // console.log()
-      const response = await fetch("http://localhost:8080/api/user", {
+      const response = await fetch("https://api.spectaer.com/watchlist/api/user", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -48,7 +48,7 @@ export function useAuth() {
   }
 
   const login = async (username: string, password: string) => {
-    const response = await fetch("http://localhost:8080/api/login", {
+    const response = await fetch("https://api.spectaer.com/watchlist/api/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export function useAuth() {
   }
 
   const signup = async (username: string, password: string) => {
-    const response = await fetch("http://localhost:8080/api/signup", {
+    const response = await fetch("https://api.spectaer.com/watchlist/api/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export function useAuth() {
   }
 
   const logout = async () => {
-    await fetch("http://localhost:8080/api/logout", {
+    await fetch("https://api.spectaer.com/watchlist/api/logout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
