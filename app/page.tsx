@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 
 
 export default function Home() {
-  const { movies } = useMovies();
+  const { movies, stats } = useMovies();
   const [showModal, setShowModal] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
 
@@ -34,9 +34,9 @@ export default function Home() {
 
 
   return (
-    <div className="page flex flex-col p-4 sm:p-6 md:p-10 md:px-[10%] lg:px-[15%] gap-6 md:gap-10">
+    <div className="page flex flex-col p-4 sm:p-6 md:p-10 md:px-[15%] lg:px-[20%] gap-6 md:gap-10">
       <Header />
-      <Stats />
+      <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Watchlist</h1>

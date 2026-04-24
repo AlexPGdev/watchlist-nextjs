@@ -26,7 +26,6 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
 
 
     useEffect(() => {
-
         if(!open || !movie) return
 
         fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${movie?.tmdbId ? movie?.tmdbId : movie?.id}&type=${movie?.contentType ? movie?.contentType : `${movie?.mediaType}`.toLowerCase()}`, {
@@ -159,7 +158,7 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
     }
 
     return (
-        <AnimatePresence >
+        <AnimatePresence>
             {(open && movie !== null) && (
                 <>
                     <motion.div
@@ -299,8 +298,8 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
                                                                     seen.get(c.id)?.characters.push(c.character);
                                                                 }
                                                             });
-                                                            return result.map((c, i) => (
-                                                                <div key={i} className="flex flex-col w-[100px] shrink-0">
+                                                            return result.map((c) => (
+                                                                <div key={c.member.id ?? c.member.name} className="flex flex-col w-[100px] shrink-0">
                                                                     <img src={`https://image.tmdb.org/t/p/w500/${c.member.profile_path}`} className="w-[100px] h-[150px] rounded-lg mb-1" alt={c.member.name} />
                                                                     <p className="text-sm font-bold line-clamp-2 text-zinc-200 ">{c.member.name}</p>
                                                                     <p className="text-xs line-clamp-2 leading-none font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.characters.join(", ")}</p>
@@ -407,7 +406,7 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
 
                                             <div className="flex flex-col gap-4 w-4/6 ml-auto mr-auto">
                                                 {alsoWatch.slice(0, 3).map((c: any) => (
-                                                    <div className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
+                                                    <div key={c.id ?? c.tmdbId ?? c.title} className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
                                                         <img src={`https://image.tmdb.org/t/p/original${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
 
                                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.title}</p>
