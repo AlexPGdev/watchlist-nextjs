@@ -2,19 +2,28 @@
 
 import { FilterTab } from "./components/FilterTab";
 import { Header } from "./components/Header";
-import { MovieDetailsModal } from "./components/modals/MovieDetailsModal";
-import { MovieCard } from "./components/MovieCard";
-import { MovieGrid } from "./components/MovieGrid";
+import { ContentDetailsModal } from "./components/modals/ContentDetailsModal";
+import { ContentCard } from "./components/ContentCard";
+import { ContentGrid } from "./components/ContentGrid";
 import { Stats } from "./components/Stats";
 import settings from "./constants/settings.json";
-import { useMovies } from "./hooks/useMovies";
-import { useEffect, useMemo, useState } from "react";
+import { useContent } from "./hooks/useContent";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Content } from "./types/content";
+import { LayoutGroup } from "motion/react";
 
 
 export default function Home() {
-  const { movies, stats } = useMovies();
+  const { 
+    content, 
+    stats,
+    addContent,
+    toggleWatched,
+    removeContent
+  } = useContent();
+
   const [showModal, setShowModal] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [selectedContent, setSelectedContent] = useState<any>(null);
 
   const scrollToSection = (section: number) => {
     return () => {
@@ -26,12 +35,22 @@ export default function Home() {
     }
   }
 
-  const handleMovieClick = (movie: any) => {
-    setSelectedMovie(movie)
+  const handleContentClick = useCallback((content: Content) => {
+    setSelectedContent(content)
     setShowModal(true)
-  }
+  }, []);
 
+  const handleStatusChange = useCallback((id: number) => {
+      toggleWatched(id);
+  }, [toggleWatched]);
 
+  const handleRemoveContent = useCallback((id: number) => {
+      removeContent(id);
+  }, [removeContent]);
+
+  // const handleAddContent = (tmdbId: number, mediaType: string, logged: boolean) => {
+  //   addContent(tmdbId, mediaType, logged)
+  // }
 
   return (
     <div className="page flex flex-col p-4 sm:p-6 md:p-10 md:px-[15%] lg:px-[20%] gap-6 md:gap-10">
@@ -44,9 +63,16 @@ export default function Home() {
 
         <FilterTab scrollToSection={scrollToSection} />
 
-        <MovieGrid movies={movies} onMovieClick={handleMovieClick}/>
+        <LayoutGroup>
+          <ContentGrid
+            content={content} 
+            onContentClick={handleContentClick}
+            onStatusChange={handleStatusChange}
+            onRemoveContent={handleRemoveContent}
+          />
+        </LayoutGroup>
 
-        <MovieDetailsModal movie={selectedMovie} onClose={() => setShowModal(false)} open={showModal} />
+        <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
 
 
       </div>

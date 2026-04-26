@@ -2,7 +2,7 @@
 
 import type { Movie } from "@/types/movie"
 import { getColor } from "color-thief-react"
-import { useMovies } from "./useMovies"
+import { useMovies } from "./useContent"
 import Cookies from 'js-cookie';
 
 export function useMovieActions() {

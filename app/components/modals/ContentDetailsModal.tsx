@@ -5,15 +5,15 @@ import { HiOutlinePlayCircle } from "react-icons/hi2";
 import settings from "../../constants/settings.json";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface MovieDetailsModalProps {
-    movie: any;
+interface ContentDetailsModalProps {
+    content: any;
     onClose: () => void;
     open: boolean;
 }
 
 const MAX_LOGO_HEIGHT = 100;
 
-export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClose, open }: MovieDetailsModalProps) {
+export const ContentDetailsModal = memo(function ContentDetailsModal({ content, onClose, open }: ContentDetailsModalProps) {
     const [images, setImages] = useState<{ backdrops: any[] }>({ backdrops: [] });
     const [streamingServices, setStreamingServices] = useState<any>(null);
     const [allServices, setAllServices] = useState<any>(null);
@@ -26,9 +26,9 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
 
 
     useEffect(() => {
-        if(!open || !movie) return
+        if(!open || !content) return
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${movie?.tmdbId ? movie?.tmdbId : movie?.id}&type=${movie?.contentType ? movie?.contentType : `${movie?.mediaType}`.toLowerCase()}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${content?.tmdbId ? content?.tmdbId : content?.id}&type=${content?.contentType ? content?.contentType : `${content?.mediaType}`.toLowerCase()}`, {
             "method": "GET"
         })
         .then(function (response) {
@@ -36,14 +36,14 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
         })
         .then(function (data) {
             setImages(data.images)
-            loadStreamingAvailability(movie, data)
+            loadStreamingAvailability(content, data)
             setCast(data.credits.cast)
             setCrew(data.credits.crew)
             setCreators(data.created_by)
             setProductionCompanies(data.production_companies)
             setAlsoWatch(data.recommendations.results)
         })
-    }, [movie, open])
+    }, [content, open])
 
     const handleOnClose = () => {
         setStreamingServices(null)
@@ -159,7 +159,7 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
 
     return (
         <AnimatePresence>
-            {(open && movie !== null) && (
+            {(open && content !== null) && (
                 <>
                     <motion.div
                         key="backdrop"
@@ -187,30 +187,30 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="absolute inset-0 rounded-2xl overflow-hidden -z-10">
-                                <img src={`https://image.tmdb.org/t/p/w500/${movie.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
+                                <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
                             </div>
 
                             <div className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
                                 <img 
-                                    src={`https://image.tmdb.org/t/p/w500//${movie.logoPath}`} 
-                                    style={{justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(movie.logoAspectRatio).width, height: logoSize(movie.logoAspectRatio).height, marginBottom: 5 }}
-                                    alt={movie.title} 
+                                    src={`https://image.tmdb.org/t/p/w500//${content.logoPath}`} 
+                                    style={{justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(content.logoAspectRatio).width, height: logoSize(content.logoAspectRatio).height, marginBottom: 5 }}
+                                    alt={content.title} 
                                 />
 
                                 <div className="flex justify-center gap-2">
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{movie.releaseDate.substring(0, 4)}</p>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.releaseDate.substring(0, 4)}</p>
                                     <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{movie.certification}</p>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.certification}</p>
                                     <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    {movie.contentType === 'movie' ? (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{movie.runtime > 60 ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : `${movie.runtime} mins`}</p>
+                                    {content.contentType === 'movie' ? (
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.runtime > 60 ? `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` : `${content.runtime} mins`}</p>
                                     ) : (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{movie.totalSeasons} seasons</p>
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.totalSeasons} seasons</p>
                                     )}
                                 </div>
 
                                 <div className="flex justify-center ml-auto mr-auto gap-2 max-w-1/2 flex-wrap">
-                                    {movie.genres.map((genre: string) => (
+                                    {content.genres.map((genre: string) => (
                                         <p className="text-xs p-1 px-2 bg-cyan-800/30 rounded-full border-1 border-cyan-500/80" key={genre} style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
                                             {genre}
                                         </p>
@@ -219,14 +219,14 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
 
                                 <div className="flex justify-between">
                                     <div className="flex w-[180px] h-[270px]">
-                                        <img src={`https://image.tmdb.org/t/p/w500/${movie.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={movie.title} />
+                                        <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
                                     </div>
 
                                     <div className="flex ml-auto mr-auto gap-2 rounded-2xl overflow-hidden h-[270px]">
                                         <iframe
                                             width="100%"
                                             height="100%"
-                                            src={`https://www.youtube.com/embed/${movie.trailerPath}?autoplay=1&mute=1`}
+                                            src={`https://www.youtube.com/embed/${content.trailerPath}?autoplay=1&mute=1`}
                                             style={{ aspectRatio: '16/9' }}
                                         />
                                     </div>
@@ -234,18 +234,18 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
                                     <div className="flex ">
                                         <div className="z-2 w-[180px] h-[270px]">
                                             {(images && images.backdrops && images.backdrops[0]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[0].file_path}`} className="w-full h-full object-cover rounded-xl" alt={movie.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[0].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
                                             )}
                                         </div>
                                         <div className=" z-1 w-[180px] h-[270px] -ml-40 scale-98">
                                             {(images && images.backdrops && images.backdrops[1]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={movie.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
                                             )}
                                         </div>
                                         
                                         <div className=" z-0 w-[180px] h-[270px] -ml-40 scale-96">
                                             {(images && images.backdrops && images.backdrops[2]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={movie.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
                                             )}
                                         </div>
                                     </div> 
@@ -255,7 +255,7 @@ export const MovieDetailsModal = memo(function MovieDetailsModal({ movie, onClos
                                     <div className="flex flex-col gap-4 w-[70%]">
                                         <div className="flex flex-col text-zinc-200 text-md text-justify gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Overview</h1>
-                                            <p>{movie.description}</p>
+                                            <p>{content.description}</p>
                                         </div>
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
