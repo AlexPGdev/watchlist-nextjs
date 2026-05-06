@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@view-transition {
+  navigation: auto;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -22,10 +26,10 @@ body {
   height: 100%;
   min-height: 100vh;
 
-  background: linear-gradient(
-      135deg,
-      rgba(0, 205, 205, 0.2),
-      rgba(170, 0, 170, 0.2)
+  background: radial-gradient(
+    circle at center,
+    rgb(0, 25, 30) 0%,
+    rgb(0, 10, 15) 100%
   );
 
   background-attachment: fixed;
@@ -49,3 +53,17 @@ body {
     scrollbar-width: none;
 }
 
+.swiper-slide {
+  width: auto;
+  opacity: 0.97; /* optional dimming of side slides */
+  scale: 0.97;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.swiper-slide-active {
+  transform: scale(1);
+  opacity: 1;
+  scale: 1 !important;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,1);
+}

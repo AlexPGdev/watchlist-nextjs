@@ -11,6 +11,7 @@ import { useContent } from "./hooks/useContent";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Content } from "./types/content";
 import { LayoutGroup } from "motion/react";
+import { LoginModal } from "./components/modals/LoginModal";
 
 
 export default function Home() {
@@ -24,6 +25,8 @@ export default function Home() {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const scrollToSection = (section: number) => {
     return () => {
@@ -53,13 +56,13 @@ export default function Home() {
   // }
 
   return (
-    <div className="page flex flex-col p-4 sm:p-6 md:p-10 md:px-[15%] lg:px-[20%] gap-6 md:gap-10">
-      <Header />
+    <div className="page flex flex-col p-4 sm:p-4 md:p-4 md:px-[15%] lg:px-[18%] gap-5 md:gap-5">
+      <Header onOpen={() => setShowLoginModal(true)} />
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Watchlist</h1>
-        <input type="text" placeholder="Search..." className="w-full bg-black/50 rounded-2xl border-1 border-cyan-800 p-2 px-4 shadow-xs shadow-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+        <input type="text" placeholder="Search in watchlist..." className="w-full bg-black/50 rounded-2xl border-1 border-cyan-800 p-2 px-4 shadow-xs shadow-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
 
         <FilterTab scrollToSection={scrollToSection} />
 
@@ -69,11 +72,13 @@ export default function Home() {
             onContentClick={handleContentClick}
             onStatusChange={handleStatusChange}
             onRemoveContent={handleRemoveContent}
+            fromWatchlist={true}
           />
         </LayoutGroup>
 
         <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
-
+        
+        <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
       </div>
     </div>

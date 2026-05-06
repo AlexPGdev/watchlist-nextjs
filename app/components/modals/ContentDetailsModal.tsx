@@ -263,12 +263,12 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                             {streamingServices ? (
                                                 <div className="flex gap-4 flex-wrap select-none">
                                                     {allServices?.slice(0, showMore ? allServices?.length : 5).map((service: any) => (
-                                                        <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-12 h-12 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
+                                                        <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-14 h-14 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
                                                             <img src={`https://image.tmdb.org/t/p/original${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
                                                         </a>
                                                     ))}
                                                     {(allServices?.length > 5 && !showMore) && (
-                                                        <button className="w-12 h-12 rounded-lg justify-center items-center flex gap-1 bg-fuchsia-800/30 text-md font-bold border-1 border-fuchsia-500/80 cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }} onClick={() => setShowMore(true)}>
+                                                        <button className="w-14 h-14 rounded-lg justify-center items-center flex gap-1 bg-fuchsia-800/30 text-md font-bold border-1 border-fuchsia-500/80 cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }} onClick={() => setShowMore(true)}>
                                                             <span> + {allServices?.length - 4} </span>
                                                         </button>
                                                     )}
@@ -356,6 +356,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                                         </>
                                                     )
                                                 })()}
+
                                                 {(() => {
                                                     const writing = crew?.filter((c: { department: string; name: string; job: string }) => c.department === 'Writing' && c.job !== "Novel") || [];
                                                     const writers = writing?.filter((c: { job: string; name: string }) => c.job === 'Writer' || c.job === "Story") || [];
@@ -416,11 +417,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                             </div>
                                         </div>
                                     )}
-
                                 </div>
-
-
-
                             </div>
                         </motion.div>
                     </motion.div>

@@ -12,9 +12,10 @@ interface ContentCardProps {
     onClick?: (content: Content) => void;
     onStatusChange?: (id: number) => void;
     onRemoveContent?: (id: number) => void;
+    fromWatchlist?: boolean;
 }
 
-export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent }: ContentCardProps) {
+export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist }: ContentCardProps) {
     return (
         <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} select-none parallax-effect-img`}>
             <div className="flex rounded-2xl shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)}>
@@ -63,24 +64,25 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                             </div>
                         </div>
                         
-
-                        <div className="flex justify-between gap-2">
-                            <button className="p-1.5 px-3 flex-1 uppercase rounded-xl bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.primaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onStatusChange && onStatusChange(content.id); }}>
-                                {content.watched ? (
-                                    <BsEyeSlash size={20} className="ml-auto mr-auto" />
-                                ) : (
-                                    content.contentType === 'movie' || (content.started && !content.watched) ? (
-                                        <BsEye size={20} className="ml-auto mr-auto" />
+                        {fromWatchlist && (
+                            <div className="flex justify-between gap-2">
+                                <button className="p-1.5 px-3 flex-1 uppercase rounded-xl bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.primaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onStatusChange && onStatusChange(content.id); }}>
+                                    {content.watched ? (
+                                        <BsEyeSlash size={20} className="ml-auto mr-auto" />
                                     ) : (
-                                        <HiOutlinePlayCircle size={20} className="ml-auto mr-auto" />
-                                    )
-                                )}
-                                
-                            </button>
-                            <button className="p-1.5 px-3 uppercase rounded-xl bg-fuchsia-800/80 font-bold tracking-widest text-sm shadow-inner shadow-fuchsia-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.secondaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onRemoveContent && onRemoveContent(content.id); }}>
-                                <BiTrash size={20} />
-                            </button>
-                        </div>
+                                        content.contentType === 'movie' || (content.started && !content.watched) ? (
+                                            <BsEye size={20} className="ml-auto mr-auto" />
+                                        ) : (
+                                            <HiOutlinePlayCircle size={20} className="ml-auto mr-auto" />
+                                        )
+                                    )}
+                                    
+                                </button>
+                                <button className="p-1.5 px-3 uppercase rounded-xl bg-fuchsia-800/80 font-bold tracking-widest text-sm shadow-inner shadow-fuchsia-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.secondaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onRemoveContent && onRemoveContent(content.id); }}>
+                                    <BiTrash size={20} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

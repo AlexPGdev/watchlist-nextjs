@@ -8,9 +8,10 @@ interface ContentGridProps {
     onContentClick?: (content: Content) => void;
     onStatusChange?: (id: number) => void;
     onRemoveContent?: (id: number) => void;
+    fromWatchlist?: boolean;
 }
 
-export const ContentGrid = React.memo(function ContentGrid({ content, onContentClick, onStatusChange, onRemoveContent }: ContentGridProps) {
+export const ContentGrid = React.memo(function ContentGrid({ content, onContentClick, onStatusChange, onRemoveContent, fromWatchlist }: ContentGridProps) {
 
     const { watchedContents, startedContents, toWatchContents } = useMemo(() => {
 
@@ -50,7 +51,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
                                 </motion.li>
                             ))}
                         </ul>
@@ -72,7 +73,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
                                 </motion.li>
                             ))}
                         </ul>
@@ -94,7 +95,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
                                 </motion.li>
                             ))}
                         </ul>
