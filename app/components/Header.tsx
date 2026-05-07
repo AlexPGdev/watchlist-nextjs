@@ -12,9 +12,7 @@ interface HeaderProps {
 export const Header = React.memo(function Header({ onOpen }: HeaderProps) {
 
     const {isLoggedIn, user} = useAuth();
-
-    console.log({user})
-
+    
     return (
         <div className="flex flex-col items-center text-center relative select-none">
             <div className="flex flex-row items-center flex-wrap justify-between w-full gap-10">

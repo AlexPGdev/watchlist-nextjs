@@ -67,3 +67,11 @@ body {
   z-index: 10;
   box-shadow: 0 4px 15px rgba(0,0,0,1);
 }
+
+.swiper-button-prev {
+  left: 15px !important;
+}
+
+.swiper-button-next {
+  right: 15px !important;
+}
