@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, memo } from "react"
 import type { Content } from "../types/content";
 import Cookies from 'js-cookie'
+import { useAuth } from "./useAuth";
 
 interface ContentContextType {
   content: Content[]
@@ -25,6 +26,8 @@ interface ContentContextType {
   addToFavorites: (id: number) => Promise<Content>
   filterContentType: (index: number) => void
   filterType: number
+  loadRecommendedMovies: () => Promise<void>
+  recommendations: { title: string; subtitle: string; objects: any[] }[]
 }
 
 function useDailyStreak(content: Content[]) {
@@ -73,7 +76,11 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const [currentFilter, setCurrentFilter] = React.useState('toWatch');
     const [filterType, setFilterType] = React.useState(0);
 
+    const { isLoggedIn } = useAuth();
+
     const dailyStreak = useDailyStreak(content);
+
+    const [recommendations, setRecommendations] = useState<{ title: string; subtitle: string; objects: any[] }[]>([]);
 
     const stats = useMemo(
         () => ({
@@ -85,7 +92,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         [content, dailyStreak]
     );
 
-    React.useEffect(() => {
+    useEffect(() => {
         loadContent();
     }, []);
 
@@ -108,6 +115,63 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             setLoading(false)
         });
     }, [])
+
+    const loadRecommendedMovies = useCallback(async () => {
+        if (content.length === 0) return;
+
+        try {
+            // Fetch recommendations
+            const res = await fetch(
+                `https://api.spectaer.com/watchlist/api/page-content/recommended?requestType=minimal`,
+                {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `RememberMe ${Cookies.get("rememberMeToken")}`,
+                },
+                }
+            );
+
+            const data = await res.json();
+
+            const objects = data[0].objects;
+
+            // Fetch backdrops for each object in parallel
+            const objectsWithBackdrops = await Promise.all(
+                objects.map(async (item) => {
+                try {
+                    const backdropRes = await fetch(
+                    `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=movie`
+                    );
+                    const backdropData = await backdropRes.json();
+                    return {
+                    ...item,
+                    backdrops: backdropData.images?.backdrops || [],
+                    };
+                } catch (err) {
+                    console.error("Error fetching backdrops for", item.tmdbId, err);
+                    return {
+                    ...item,
+                    backdrops: [],
+                    };
+                }
+                })
+            );
+
+            // Replace objects with backdrops in the recommendations
+            const updatedData = [
+                {
+                ...data[0],
+                objects: objectsWithBackdrops,
+                },
+                ...data.slice(1),
+            ];
+
+            setRecommendations(updatedData);
+        } catch (err) {
+            console.error("Error loading recommendations:", err);
+        }
+    }, [content, isLoggedIn]);
 
     const filterAndSearchContent = useCallback(() => {
         if(content && content.length > 0) {
@@ -329,7 +393,9 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         loadExternalRatings,
         addToFavorites,
         filterContentType,
-        filterType
+        filterType,
+        loadRecommendedMovies,
+        recommendations
     }), [
         content,
         stats,
@@ -346,7 +412,9 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         loadExternalRatings,
         addToFavorites,
         filterContentType,
-        filterType
+        filterType,
+        loadRecommendedMovies,
+        recommendations
     ]);
 
     return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>

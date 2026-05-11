@@ -55,9 +55,16 @@ body {
 
 .swiper-slide {
   width: auto;
-  opacity: 0.97; /* optional dimming of side slides */
+  opacity: 0.97;
   scale: 0.97;
   transition: transform 0.3s, opacity 0.3s;
+}
+
+.swiper-slide:not(.swiper-slide-active) {
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+  touch-action: none;
 }
 
 .swiper-slide-active {
@@ -66,12 +73,29 @@ body {
   scale: 1 !important;
   z-index: 10;
   box-shadow: 0 4px 15px rgba(0,0,0,1);
+  cursor: pointer;
 }
 
 .swiper-button-prev {
-  left: 15px !important;
+  left: 5px !important;
+}
+
+.swiper-button-prev:disabled, .swiper-button-next:disabled {
+  pointer-events: all !important;
 }
 
 .swiper-button-next {
   right: 15px !important;
+}
+
+.swiper-pagination {
+  bottom: 0px !important;
+}
+
+.swiper-pagination-bullet {
+  background-color: rgba(0, 205, 205, 1) !important;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: rgba(0, 255, 255, 1) !important;
 }
