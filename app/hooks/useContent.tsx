@@ -138,7 +138,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
             // Fetch backdrops for each object in parallel
             const objectsWithBackdrops = await Promise.all(
-                objects.map(async (item) => {
+                objects.map(async (item: any) => {
                 try {
                     const backdropRes = await fetch(
                     `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=movie`

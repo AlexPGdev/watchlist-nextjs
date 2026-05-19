@@ -16,9 +16,24 @@ interface ContentCardProps {
 }
 
 export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist }: ContentCardProps) {
+    const [isButtonActive, setIsButtonActive] = React.useState(false);
+
+    const handleCardPointerDown = (e: React.PointerEvent) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        setIsButtonActive(false);
+    };
+
+    const handleButtonPointerDown = () => {
+        setIsButtonActive(true);
+    };
+
+    const handlePointerUp = () => {
+        setIsButtonActive(false);
+    };
+
     return (
-        <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} select-none parallax-effect-img active:scale-95`}>
-            <div className="flex rounded-2xl shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)}>
+        <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} select-none parallax-effect-img ${!isButtonActive ? "active:scale-95" : ""}`}>
+            <div className="flex rounded-2xl shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)} onPointerDown={handleCardPointerDown} onPointerUp={handlePointerUp}>
                 <div className={`relative flex flex-col p-4`}>
                     
                     <div className="absolute w-full h-full top-0 left-0 rounded-xl overflow-hidden -z-10">
@@ -66,7 +81,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                         
                         {fromWatchlist && (
                             <div className="flex justify-between gap-2">
-                                <button className="p-1.5 px-3 flex-1 uppercase rounded-xl bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.primaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onStatusChange && onStatusChange(content.id); }}>
+                                <button className="p-1.5 px-3 flex-1 uppercase rounded-xl bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 active:scale-95 transition-all" style={{color: `rgba(${settings.primaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onStatusChange && onStatusChange(content.id); }} onPointerDown={handleButtonPointerDown}>
                                     {content.watched ? (
                                         <BsEyeSlash size={20} className="ml-auto mr-auto" />
                                     ) : (
@@ -78,7 +93,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                                     )}
                                     
                                 </button>
-                                <button className="p-1.5 px-3 uppercase rounded-xl bg-fuchsia-800/80 font-bold tracking-widest text-sm shadow-inner shadow-fuchsia-200/30 cursor-pointer hover:scale-105 transition-all" style={{color: `rgba(${settings.secondaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onRemoveContent && onRemoveContent(content.id); }}>
+                                <button className="p-1.5 px-3 uppercase rounded-xl bg-fuchsia-800/80 font-bold tracking-widest text-sm shadow-inner shadow-fuchsia-200/30 cursor-pointer hover:scale-105 active:scale-95 transition-all" style={{color: `rgba(${settings.secondaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onRemoveContent && onRemoveContent(content.id); }} onPointerDown={handleButtonPointerDown}>
                                     <BiTrash size={20} />
                                 </button>
                             </div>

@@ -1,12 +1,14 @@
-import { memo, useEffect, useState } from "react";
-import { BiTrash } from "react-icons/bi";
-import { BsEye, BsEyeSlash } from "react-icons/bs";
-import { HiOutlinePlayCircle } from "react-icons/hi2";
+
+import { memo, useEffect, useRef, useState } from "react";
 import settings from "../../constants/settings.json";
 import { motion, AnimatePresence } from "framer-motion";
+import { RippleExplosion } from "../RippleExplosion";
+import { BiPlus } from "react-icons/bi";
+import { Content } from "../../types/content";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface ContentDetailsModalProps {
-    content: any;
+    content: Content;
     onClose: () => void;
     open: boolean;
 }
@@ -23,10 +25,22 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
     const [creators, setCreators] = useState<any[]>([]);
     const [productionCompanies, setProductionCompanies] = useState<any>(null);
     const [alsoWatch, setAlsoWatch] = useState<any>(null);
+    const [showRipple, setShowRipple] = useState(false);
+    const [rippleKey, setRippleKey] = useState(0);
+    const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const modalRef = useRef<HTMLDivElement | null>(null);
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [type, id] = [...searchParams.entries()][0] || [];
+
+    const [contentToShow, setContentToShow] = useState<Content | null>(null);
 
     useEffect(() => {
         if(!open || !content) return
+
+        setContentToShow(content)
 
         fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${content?.tmdbId ? content?.tmdbId : content?.id}&type=${content?.contentType ? content?.contentType : `${content?.mediaType}`.toLowerCase()}`, {
             "method": "GET"
@@ -44,6 +58,41 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
             setAlsoWatch(data.recommendations.results)
         })
     }, [content, open])
+
+    useEffect(() => {
+        if(!id || !type || !open) return
+
+        if(content.id === parseInt(id)) return;
+
+        fetch(`https://api.spectaer.com/watchlist/api/content/tmdb/${id}`, {
+            "method": "GET"
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            console.log(type, id)
+
+            setContentToShow(data)
+
+            fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${data?.tmdbId ? data?.tmdbId : data?.id}&type=movie`, {
+                "method": "GET"
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                setImages(data.images)
+                loadStreamingAvailability(contentToShow, data)
+                setCast(data.credits.cast)
+                setCrew(data.credits.crew)
+                setCreators(data.created_by)
+                setProductionCompanies(data.production_companies)
+                setAlsoWatch(data.recommendations.results)
+            })
+        })
+
+    }, [type, id])
 
     const handleOnClose = () => {
         setStreamingServices(null)
@@ -157,9 +206,29 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
         }
     }
 
+    const handleAddWatchlist = () => {
+        const buttonRect = buttonRef.current?.getBoundingClientRect();
+        const modalRect = modalRef.current?.getBoundingClientRect();
+
+        if (buttonRect && modalRect) {
+            setButtonPosition({
+                x: buttonRect.left - modalRect.left + buttonRect.width / 2,
+                y: buttonRect.top - modalRect.top + buttonRect.height / 2,
+            });
+        }
+
+        setShowRipple(false);
+        setRippleKey((prev) => prev + 1);
+
+        // Use a tiny delay so React can commit the false state before restarting.
+        window.setTimeout(() => {
+            setShowRipple(true);
+        }, 0);
+    }
+
     return (
         <AnimatePresence>
-            {(open && content !== null) && (
+            {(open && contentToShow !== null) && (
                 <>
                     <motion.div
                         key="backdrop"
@@ -179,38 +248,52 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                         onClick={handleOnClose}
                     >
                         <motion.div
-                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-1/2 max-h-[80%] z-10 bg-black/60"
+                            ref={modalRef}
+                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-1/2 max-h-[80%] z-10 bg-black/60 overflow-hidden"
                             initial={{ opacity: 0, y: 20, scale: 0.5 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.5 }}
                             transition={{ duration: 0.25 }}
                             onClick={(e) => e.stopPropagation()}
                         >
+
+                            <RippleExplosion
+                                key={rippleKey}
+                                isActive={showRipple}
+                                originX={buttonPosition.x}
+                                originY={buttonPosition.y}
+                                containerWidth={modalRef.current?.offsetWidth}
+                                containerHeight={modalRef.current?.offsetHeight}
+                                color="rgba(0, 255, 0, 0.4)"
+                                duration={1500}
+                                onComplete={() => setShowRipple(false)}
+                            />
+
                             <div className="absolute inset-0 rounded-2xl overflow-hidden -z-10">
-                                <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
+                                <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
                             </div>
 
                             <div className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
                                 <img 
-                                    src={`https://image.tmdb.org/t/p/w500//${content.logoPath}`} 
-                                    style={{justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(content.logoAspectRatio).width, height: logoSize(content.logoAspectRatio).height, marginBottom: 5 }}
-                                    alt={content.title} 
+                                    src={`https://image.tmdb.org/t/p/w500//${contentToShow.logoPath}`} 
+                                    style={{justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(contentToShow.logoAspectRatio).width, height: logoSize(contentToShow.logoAspectRatio).height, marginBottom: 5 }}
+                                    alt={contentToShow.title}
                                 />
 
                                 <div className="flex justify-center gap-2">
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.releaseDate.substring(0, 4)}</p>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow?.releaseDate?.substring(0, 4)}</p>
                                     <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.certification}</p>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.certification}</p>
                                     <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    {content.contentType === 'movie' ? (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.runtime > 60 ? `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` : `${content.runtime} mins`}</p>
+                                    {contentToShow.contentType === 'movie' ? (
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.runtime > 60 ? `${Math.floor(contentToShow.runtime / 60)}h ${contentToShow.runtime % 60}m` : `${contentToShow.runtime} mins`}</p>
                                     ) : (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{content.totalSeasons} seasons</p>
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.totalSeasons} seasons</p>
                                     )}
                                 </div>
 
                                 <div className="flex justify-center ml-auto mr-auto gap-2 max-w-1/2 flex-wrap">
-                                    {content.genres.map((genre: string) => (
+                                    {contentToShow?.genres?.map((genre: string) => (
                                         <p className="text-xs p-1 px-2 bg-cyan-800/30 rounded-full border-1 border-cyan-500/80" key={genre} style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
                                             {genre}
                                         </p>
@@ -219,14 +302,14 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
 
                                 <div className="flex justify-between">
                                     <div className="flex w-[180px] h-[270px]">
-                                        <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
+                                        <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                     </div>
 
                                     <div className="flex ml-auto mr-auto gap-2 rounded-2xl overflow-hidden h-[270px]">
                                         <iframe
                                             width="100%"
                                             height="100%"
-                                            src={`https://www.youtube.com/embed/${content.trailerPath}?autoplay=1&mute=1`}
+                                            src={`https://www.youtube.com/embed/${contentToShow.trailerPath}?autoplay=1&mute=1`}
                                             style={{ aspectRatio: '16/9' }}
                                         />
                                     </div>
@@ -234,18 +317,18 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                     <div className="flex ">
                                         <div className="z-2 w-[180px] h-[270px]">
                                             {(images && images.backdrops && images.backdrops[0]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[0].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[0].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
                                         <div className=" z-1 w-[180px] h-[270px] -ml-40 scale-98">
                                             {(images && images.backdrops && images.backdrops[1]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
                                         
                                         <div className=" z-0 w-[180px] h-[270px] -ml-40 scale-96">
                                             {(images && images.backdrops && images.backdrops[2]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={content.title} />
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
                                     </div> 
@@ -255,7 +338,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                     <div className="flex flex-col gap-4 w-[70%]">
                                         <div className="flex flex-col text-zinc-200 text-md text-justify gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Overview</h1>
-                                            <p>{content.description}</p>
+                                            <p>{contentToShow.description}</p>
                                         </div>
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
@@ -407,17 +490,40 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
 
                                             <div className="flex flex-col gap-4 w-4/6 ml-auto mr-auto">
                                                 {alsoWatch.slice(0, 3).map((c: any) => (
-                                                    <div key={c.id ?? c.tmdbId ?? c.title} className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
+                                                    <button 
+                                                        key={c.id ?? c.tmdbId ?? c.title} 
+                                                        className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" 
+                                                        style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}
+                                                        onClick={() => router.push(`?content=${c.id}`)}
+                                                    >
                                                         <img src={`https://image.tmdb.org/t/p/original${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
 
                                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.title}</p>
                                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.secondaryColor}, 1)` }}>{c.release_date.substring(0, 4)}</p>
-                                                    </div>
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
                                 </div>
+                                
+                            </div>
+
+                            <div className="absolute bottom-10 w-full flex gap-2 justify-center">
+                                <button
+                                    id="add-to-watchlist"
+                                    ref={buttonRef}
+                                    className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95"
+                                    style={{ color: `rgba(${settings.primaryColor}, 1)` }}
+                                    onClick={() => handleAddWatchlist() }
+                                >
+                                    <span className="inline-block content-center text-center transition-transform duration-300 ">
+                                        <BiPlus size={20} />
+                                    </span>
+                                    <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
+                                        Add to watchlist
+                                    </span>
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>

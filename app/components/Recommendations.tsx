@@ -11,10 +11,10 @@ interface RecommendationsProps {
 
 export const Recommendations = React.memo(function Recommendations({ recommendations, onContentClick }: RecommendationsProps) {
 
-    const scrollRefs = React.useRef({})
-    const [scrollState, setScrollState] = React.useState({})
+    const scrollRefs = React.useRef({}) as React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>
+    const [scrollState, setScrollState] = React.useState<{ [key: string]: { isAtLeft: boolean; isAtRight: boolean } }>({})
 
-    const updateScrollState = (key) => {
+    const updateScrollState = (key: string) => {
         const el = scrollRefs.current[key]
 
         if (!el) return
@@ -34,7 +34,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
     }
 
     return (
-        recommendations.map((item, index) => (
+        recommendations.map((item: any) => (
             item.cacheKey !== 'trending_movies' && (
                 <div key={item.cacheKey} className="flex flex-col select-none">
                     <div>
@@ -55,7 +55,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                             onScroll={() => updateScrollState(item.cacheKey)}
                             className="relative flex gap-2 [mask-image:linear-gradient(to_right,black_90%,transparent)] py-2 overflow-x-scroll no-scrollbar overflow-y-visible"
                         >
-                            {item.objects.map((object, index) => (
+                            {item.objects.map((object: any) => (
                                 <div key={object.movie ? object.movie.id : object.id} className="shrink-0 w-[180px]">
                                     <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} />
                                 </div>

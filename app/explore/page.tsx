@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { Header } from "../components/Header";
 import { useAuth } from "../hooks/useAuth";
 import { useContent } from "../hooks/useContent";
@@ -55,7 +55,9 @@ export default function Page() {
 
         <ExploreRightSide />
 
-        <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+        <Suspense fallback={null}>
+          <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+        </Suspense>
       </div>
     </div>
   );

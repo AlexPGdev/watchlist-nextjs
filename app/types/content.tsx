@@ -26,4 +26,7 @@ export interface Content {
     releaseDate: string
     addedDate: number
     logged: boolean
+    trailerPath: string
+    recommendedMovies: number[]
+    recommendedTvSeries: number[] | null
 }

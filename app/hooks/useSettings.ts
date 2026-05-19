@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import Cookies from 'js-cookie';
 
 interface Settings {
-  gridSize: number
-  view: number
+  gridSize: string | number
+  view: string | number
 }
 
 export function useSettings() {

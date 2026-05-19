@@ -8,10 +8,11 @@ import { ContentGrid } from "./components/ContentGrid";
 import { Stats } from "./components/Stats";
 import settings from "./constants/settings.json";
 import { useContent } from "./hooks/useContent";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Content } from "./types/content";
 import { LayoutGroup } from "motion/react";
 import { LoginModal } from "./components/modals/LoginModal";
+import { useRouter } from "next/navigation";
 
 
 export default function Home() {
@@ -22,6 +23,8 @@ export default function Home() {
     toggleWatched,
     removeContent
   } = useContent();
+
+  const router = useRouter();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
@@ -39,8 +42,13 @@ export default function Home() {
   }
 
   const handleContentClick = useCallback((content: Content) => {
+    router.push(`?content=${content.tmdbId}`)
     setSelectedContent(content)
     setShowModal(true)
+
+    // setTimeout(() => {
+    //   setSelectedContent(newContent[0])
+    // }, 5000)
   }, []);
 
   const handleStatusChange = useCallback((id: number) => {
@@ -76,7 +84,10 @@ export default function Home() {
           />
         </LayoutGroup>
 
-        <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+        <Suspense fallback={null}>
+          <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+        </Suspense>
+
         
         <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
