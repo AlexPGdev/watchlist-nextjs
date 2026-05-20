@@ -23,6 +23,7 @@ export interface Content {
     favorite: number
     contentType: string
     mediaType: string
+    content_type: string
     releaseDate: string
     addedDate: number
     logged: boolean

@@ -17,8 +17,12 @@ import { Trending } from "../components/Trending";
 import { Recommendations } from "../components/Recommendations";
 import { ExploreRightSide } from "../components/ExploreRightSide";
 import { ContentDetailsModal } from "../components/modals/ContentDetailsModal";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+
+  const router = useRouter();
+
   const { user, isLoggedIn } = useAuth();
   const { content } = useContent();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -32,13 +36,20 @@ export default function Page() {
   }, [content, isLoggedIn])
 
   const handleContentClick = useCallback((content: Content) => {
+    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`)
     setSelectedContent(content)
+    setShowModal(true)
+  }, []);
+
+  const handleOpenSearchResult = useCallback((result: any) => {
+    router.push(`?${result.mediaType.toLowerCase()}=${result.id}`)
+    setSelectedContent(result)
     setShowModal(true)
   }, []);
 
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 md:px-[15%] lg:px-[18%] gap-5 md:gap-5 tracking-wider">
-      <Header onOpen={() => setShowLoginModal(true)} />
+      <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
 
       <div className="flex justify-between gap-25">
         <div className="flex flex-col w-3/4 gap-4">
