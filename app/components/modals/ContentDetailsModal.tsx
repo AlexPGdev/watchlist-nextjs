@@ -3,19 +3,23 @@ import { memo, useEffect, useRef, useState } from "react";
 import settings from "../../constants/settings.json";
 import { motion, AnimatePresence } from "framer-motion";
 import { RippleExplosion } from "../RippleExplosion";
-import { BiPlus } from "react-icons/bi";
+import { BiCheck, BiPlus } from "react-icons/bi";
 import { Content } from "../../types/content";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useContent } from "@/app/hooks/useContent";
 
 interface ContentDetailsModalProps {
-    content: Content;
+    selectedContent: Content;
     onClose: () => void;
     open: boolean;
 }
 
 const MAX_LOGO_HEIGHT = 100;
 
-export const ContentDetailsModal = memo(function ContentDetailsModal({ content, onClose, open }: ContentDetailsModalProps) {
+export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedContent, onClose, open }: ContentDetailsModalProps) {
+
+    const { addContent, content } = useContent();
+
     const [images, setImages] = useState<{ backdrops: any[] }>({ backdrops: [] });
     const [streamingServices, setStreamingServices] = useState<any>(null);
     const [allServices, setAllServices] = useState<any>(null);
@@ -36,13 +40,14 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
     const [type, id] = [...searchParams.entries()][0] || [];
 
     const [contentToShow, setContentToShow] = useState<Content | null>(null);
+    const [detailedContent, setDetailedContent] = useState<any>(null);
 
     useEffect(() => {
-        if(!open || !content) return
+        if(!open || !selectedContent) return
 
-        setContentToShow(content)
+        setContentToShow(selectedContent)
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${content?.tmdbId ? content?.tmdbId : content?.id}&type=${content?.contentType ? content?.contentType : `${content?.mediaType}`.toLowerCase()}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${selectedContent?.tmdbId ? selectedContent?.tmdbId : selectedContent?.id}&type=${selectedContent?.contentType ? selectedContent?.contentType : `${selectedContent?.mediaType}`.toLowerCase()}`, {
             "method": "GET"
         })
         .then(function (response) {
@@ -50,38 +55,53 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
         })
         .then(function (data) {
             setImages(data.images)
-            loadStreamingAvailability(content, data)
+            loadStreamingAvailability(selectedContent, data)
             setCast(data.credits.cast)
             setCrew(data.credits.crew)
             setCreators(data.created_by)
             setProductionCompanies(data.production_companies)
             setAlsoWatch(data.recommendations.results)
         })
-    }, [content, open])
+    }, [selectedContent, open])
 
     useEffect(() => {
         if(!id || !type || !open) return
 
-        if(content.id === parseInt(id)) return;
+        // if(selectedContent.id === parseInt(id)) return;
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/tmdb/${id}`, {
-            "method": "GET"
-        })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            console.log(type, id)
+        console.log('test')
 
-            setContentToShow(data)
+        // fetch(`https://api.spectaer.com/watchlist/api/content/tmdb/${id}`, {
+        //     "method": "GET"
+        // })
+        // .then(function (response) {
+        //     return response.json();
+        // })
+        // .then(function (data) {
+        //     console.log(type, id)
 
-            fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${data?.tmdbId ? data?.tmdbId : data?.id}&type=movie`, {
+        //     setContentToShow(data)
+
+            fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${id}&type=${type}`, {
                 "method": "GET"
             })
             .then(function (response) {
                 return response.json();
             })
             .then(function (data) {
+                setDetailedContent(data)
+                console.log({data})
+
+                setContentToShow(prev => prev ? { 
+                    ...prev, 
+                    posterPath: data.images.posters[0]?.file_path, 
+                    logoPath: data.images.logos[0]?.file_path,
+                    logoAspectRatio: data.images.logos[0]?.aspect_ratio,
+                    description: data.overview,
+                    releaseDate: data.release_date,
+                    totalSeasons: data.seasons?.length,
+                    trailerPath: data.videos?.results[0]?.key,
+                } : null)
                 setImages(data.images)
                 loadStreamingAvailability(contentToShow, data)
                 setCast(data.credits.cast)
@@ -90,9 +110,9 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                 setProductionCompanies(data.production_companies)
                 setAlsoWatch(data.recommendations.results)
             })
-        })
+        // })
 
-    }, [type, id])
+    }, [type, id, selectedContent, open])
 
     const handleOnClose = () => {
         setStreamingServices(null)
@@ -207,6 +227,10 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
     }
 
     const handleAddWatchlist = () => {
+        if(!contentToShow) return
+
+        addContent(contentToShow.tmdbId ? contentToShow.tmdbId : contentToShow.id, type, false)
+
         const buttonRect = buttonRef.current?.getBoundingClientRect();
         const modalRect = modalRef.current?.getBoundingClientRect();
 
@@ -270,7 +294,13 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                             />
 
                             <div className="absolute inset-0 rounded-2xl overflow-hidden -z-10">
-                                <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
+                                {contentToShow.posterPath && (
+                                    <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
+                                )}
+
+                                {/* {(!contentToShow.posterPath && images.posters && images.posters[0]) && (
+                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[0].file_path}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
+                                )} */}
                             </div>
 
                             <div className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
@@ -281,14 +311,39 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                 />
 
                                 <div className="flex justify-center gap-2">
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow?.releaseDate?.substring(0, 4)}</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.certification}</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                    {contentToShow.contentType === 'movie' ? (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.runtime > 60 ? `${Math.floor(contentToShow.runtime / 60)}h ${contentToShow.runtime % 60}m` : `${contentToShow.runtime} mins`}</p>
+                                    {/* <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={contentToShow.releaseDate}>{contentToShow?.releaseDate?.substring(0, 4)}</p> */}
+                                    {detailedContent?.first_air_date ? (
+                                        <div className="flex gap-0.5">
+                                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={detailedContent.first_air_date}>{detailedContent?.first_air_date?.substring(0, 4)}</p>
+                                            {detailedContent.last_air_date && (
+                                                <>
+                                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>-</p>
+                                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={detailedContent.last_air_date}>{detailedContent?.last_air_date?.substring(0, 4)}</p>
+                                                </>
+                                            )}
+                                        </div>
                                     ) : (
-                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.totalSeasons} seasons</p>
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={contentToShow.releaseDate}>{contentToShow?.releaseDate?.substring(0, 4)}</p>
+                                    )}
+
+                                    {contentToShow.certification && (
+                                        <>                                        
+                                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
+                                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.certification}</p>
+                                        </>
+                                    )}
+                                    {(contentToShow.contentType?.toLowerCase() === 'movie' || contentToShow.content_type?.toLowerCase() === 'movie') ? (
+                                        <>
+                                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
+                                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.runtime > 60 ? `${Math.floor(contentToShow.runtime / 60)}h ${contentToShow.runtime % 60}m` : `${contentToShow.runtime} mins`}</p>
+                                        </>
+                                    ) : (
+                                        contentToShow.totalSeasons && (
+                                            <>
+                                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
+                                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{contentToShow.totalSeasons} seasons</p>
+                                            </>
+                                        )
                                     )}
                                 </div>
 
@@ -338,13 +393,13 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                     <div className="flex flex-col gap-4 w-[70%]">
                                         <div className="flex flex-col text-zinc-200 text-md text-justify gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Overview</h1>
-                                            <p>{contentToShow.description}</p>
+                                            <p className="p-1">{contentToShow.description}</p>
                                         </div>
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Available on</h1>
                                             {streamingServices ? (
-                                                <div className="flex gap-4 flex-wrap select-none">
+                                                <div className="flex p-1 gap-4 flex-wrap select-none">
                                                     {allServices?.slice(0, showMore ? allServices?.length : 5).map((service: any) => (
                                                         <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-14 h-14 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
                                                             <img src={`https://image.tmdb.org/t/p/original${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
@@ -368,7 +423,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                             
                                             <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                                 <div className="rounded-2xl overflow-hidden">
-                                                    <div className="relative flex gap-2 overflow-x-scroll no-scrollbar">
+                                                    <div className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
                                                         {(() => {
                                                             const seen = new Map<number, { member: any; characters: string[] }>();
                                                             const result: any[] = [];
@@ -398,7 +453,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Crew</h1>
-                                            <div className="flex flex-wrap justify-between w-1/2 gap-2">
+                                            <div className="flex flex-wrap p-1 justify-between w-1/2 gap-2">
                                                 {(() => {
                                                     return (
                                                         (creators && creators.length > 0) && (
@@ -494,12 +549,12 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                                         key={c.id ?? c.tmdbId ?? c.title} 
                                                         className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" 
                                                         style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}
-                                                        onClick={() => router.push(`?content=${c.id}`)}
+                                                        onClick={() => router.push(`?${type}=${c.id}`)}
                                                     >
                                                         <img src={`https://image.tmdb.org/t/p/original${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
 
                                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.title}</p>
-                                                        <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.secondaryColor}, 1)` }}>{c.release_date.substring(0, 4)}</p>
+                                                        <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.secondaryColor}, 1)` }}>{c.release_date?.substring(0, 4)}</p>
                                                     </button>
                                                 ))}
                                             </div>
@@ -513,15 +568,16 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ content, 
                                 <button
                                     id="add-to-watchlist"
                                     ref={buttonRef}
-                                    className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95"
+                                    className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
                                     style={{ color: `rgba(${settings.primaryColor}, 1)` }}
                                     onClick={() => handleAddWatchlist() }
+                                    disabled={content.find(c => c.tmdbId === contentToShow.tmdbId) ? true : false}
                                 >
                                     <span className="inline-block content-center text-center transition-transform duration-300 ">
-                                        <BiPlus size={20} />
+                                        {content.find(c => c.tmdbId === selectedContent.tmdbId) ? <BiCheck size={20} /> : <BiPlus size={20} />}
                                     </span>
                                     <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
-                                        Add to watchlist
+                                        {content.find(c => c.tmdbId === selectedContent.tmdbId) ? "In your watchlist" : "Add to watchlist"}
                                     </span>
                                 </button>
                             </div>

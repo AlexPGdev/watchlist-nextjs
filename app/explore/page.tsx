@@ -56,7 +56,7 @@ export default function Page() {
         <ExploreRightSide />
 
         <Suspense fallback={null}>
-          <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+          <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
         </Suspense>
       </div>
     </div>

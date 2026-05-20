@@ -42,7 +42,8 @@ export default function Home() {
   }
 
   const handleContentClick = useCallback((content: Content) => {
-    router.push(`?content=${content.tmdbId}`)
+    console.log({content})
+    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`)
     setSelectedContent(content)
     setShowModal(true)
 
@@ -59,13 +60,19 @@ export default function Home() {
       removeContent(id);
   }, [removeContent]);
 
+  const handleOpenSearchResult = useCallback((result: any) => {
+    router.push(`?${result.mediaType.toLowerCase()}=${result.id}`)
+    setSelectedContent(result)
+    setShowModal(true)
+  }, []);
+
   // const handleAddContent = (tmdbId: number, mediaType: string, logged: boolean) => {
   //   addContent(tmdbId, mediaType, logged)
   // }
 
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 md:px-[15%] lg:px-[18%] gap-5 md:gap-5">
-      <Header onOpen={() => setShowLoginModal(true)} />
+      <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
@@ -85,7 +92,7 @@ export default function Home() {
         </LayoutGroup>
 
         <Suspense fallback={null}>
-          <ContentDetailsModal content={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+          <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
         </Suspense>
 
         
