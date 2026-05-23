@@ -273,7 +273,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                     >
                         <motion.div
                             ref={modalRef}
-                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-3/5 max-h-[80%] z-10 bg-black/60 overflow-hidden"
+                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-[95%] lg:w-3/5 max-h-[80%] z-10 bg-black/60 overflow-hidden"
                             initial={{ opacity: 0, y: 20, scale: 0.5 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.5 }}
