@@ -43,7 +43,7 @@ export default function Home() {
 
   const handleContentClick = useCallback((content: Content) => {
     console.log({content})
-    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`)
+    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
 
@@ -61,7 +61,7 @@ export default function Home() {
   }, [removeContent]);
 
   const handleOpenSearchResult = useCallback((result: any) => {
-    router.push(`?${result.mediaType.toLowerCase()}=${result.id}`)
+    router.push(`?${result.mediaType.toLowerCase()}=${result.id}`, { scroll: false })
     setSelectedContent(result)
     setShowModal(true)
   }, []);

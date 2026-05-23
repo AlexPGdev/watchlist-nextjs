@@ -3,7 +3,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import settings from "../../constants/settings.json";
 import { motion, AnimatePresence } from "framer-motion";
 import { RippleExplosion } from "../RippleExplosion";
-import { BiCheck, BiPlus } from "react-icons/bi";
+import { BiCheck, BiPlus, BiX } from "react-icons/bi";
 import { Content } from "../../types/content";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
@@ -273,7 +273,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                     >
                         <motion.div
                             ref={modalRef}
-                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-[95%] lg:w-3/5 max-h-[80%] z-10 bg-black/60 overflow-hidden"
+                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-[95%] lg:w-3/5 max-h-[95%] md:max-h-[80%] z-10 bg-black/60 overflow-hidden"
                             initial={{ opacity: 0, y: 20, scale: 0.5 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.5 }}
@@ -309,6 +309,10 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                     style={{justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(contentToShow.logoAspectRatio).width, height: logoSize(contentToShow.logoAspectRatio).height, marginBottom: 5 }}
                                     alt={contentToShow.title}
                                 />
+
+                                <button className="absolute z-10 top-3 right-3 cursor-pointer hover:scale-105 active:scale-95 transition-all bg-fuchsia-500/20 rounded-full backdrop-blur-sm" onClick={handleOnClose}>
+                                    <BiX size={35} color={`rgba(${settings.secondaryColor}, 1)`} />
+                                </button>
 
                                 <div className="flex justify-center gap-2">
                                     {/* <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={contentToShow.releaseDate}>{contentToShow?.releaseDate?.substring(0, 4)}</p> */}
@@ -355,59 +359,99 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                     ))}
                                 </div>
 
-                                <div className="flex justify-center gap-5">
-                                    <div className="flex w-[20%]">
-                                        <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
-                                    </div>
+                                {window.innerWidth > 650 ? (
+                                    <div className="flex justify-center gap-2">
+                                        <div className="flex w-[20%]">
+                                            <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                        </div>
 
-                                    <div className="flex  gap-2 rounded-2xl overflow-hidden w-[60%]">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            src={`https://www.youtube.com/embed/${contentToShow.trailerPath}?autoplay=1&mute=1`}
-                                            style={{ aspectRatio: '16/9' }}
-                                        />
-                                    </div>
+                                        <div className="flex gap-2 rounded-2xl overflow-hidden w-[60%]">
+                                            <iframe
+                                                width="100%"
+                                                height="100%"
+                                                src={`https://www.youtube.com/embed/${contentToShow.trailerPath}?autoplay=1&mute=1`}
+                                                style={{ aspectRatio: '16/9' }}
+                                            />
+                                        </div>
 
-                                    <div className="flex w-[20%] ">
-                                        <div className="z-2 w-[80%] ">
-                                            {(images && images.posters && images.posters[1]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
-                                            )}
+                                        <div className="flex w-[20%] ">
+                                            <div className="z-2 w-full "  style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                {(images && images.posters && images.posters[1]) && (
+                                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                )}
+                                            </div>
+                                            <div className=" z-1  w-[80%] -ml-[70px] scale-98"  style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                {(images && images.posters && images.posters[2]) && (
+                                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                )}
+                                            </div>
+                                            
+                                            <div className=" z-0  w-[80%] -ml-[70px] scale-96"  style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                {(images && images.posters && images.posters[3]) && (
+                                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                )}
+                                            </div>
+                                        </div> 
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex gap-2 rounded-2xl overflow-hidden w-full">
+                                            <iframe
+                                                width="100%"
+                                                height="100%"
+                                                src={`https://www.youtube.com/embed/${contentToShow.trailerPath}?autoplay=1&mute=1`}
+                                                style={{ aspectRatio: '16/9' }}
+                                            />
                                         </div>
-                                        <div className=" z-1  w-[20%] -ml-5 scale-98">
-                                            {(images && images.posters && images.posters[2]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
-                                            )}
+
+                                        <div className="flex w-full justify-between">
+                                            <div className="flex w-[35%]">
+                                                <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                            </div>
+
+                                            <div className="flex w-[55%] ">
+                                                <div className="z-2 w-[60%] " style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                    {(images && images.posters && images.posters[1]) && (
+                                                        <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                    )}
+                                                </div>
+                                                <div className=" z-1  w-[60%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                    {(images && images.posters && images.posters[2]) && (
+                                                        <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                    )}
+                                                </div>
+                                                
+                                                <div className=" z-0  w-[60%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                                    {(images && images.posters && images.posters[3]) && (
+                                                        <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                                    )}
+                                                </div>
+                                            </div> 
                                         </div>
-                                        
-                                        <div className=" z-0  w-[20%] -ml-5 scale-96">
-                                            {(images && images.posters && images.posters[3]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
-                                            )}
-                                        </div>
-                                    </div> 
-                                </div>
+                                    </div>
+                                )}
+
+
 
                                 <div className="flex justify-between flex-col lg:flex-row">
                                     <div className="flex flex-col gap-4 w-[full] lg:w-[70%]">
                                         <div className="flex flex-col text-zinc-200 text-md text-justify gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Overview</h1>
-                                            <p className="p-1 text-lg">{contentToShow.description}</p>
+                                            <p className="p-1 text-sm md:text-lg">{contentToShow.description}</p>
                                         </div>
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Available on</h1>
-                                            {streamingServices ? (
+                                            {streamingServices && allServices?.length > 0 ? (
                                                 <div className="flex p-1 gap-4 flex-wrap select-none">
-                                                    {allServices?.slice(0, showMore ? allServices?.length : 5).map((service: any) => (
+                                                    {allServices?.slice(0, showMore ? allServices?.length : 3).map((service: any) => (
                                                         <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-16 h-16 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
                                                             <img src={`https://image.tmdb.org/t/p/original${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
                                                         </a>
                                                     ))}
-                                                    {(allServices?.length > 5 && !showMore) && (
+                                                    {(allServices?.length > 3 && !showMore) && (
                                                         <button className="w-16 h-16 rounded-lg justify-center items-center flex gap-1 bg-fuchsia-800/30 text-md font-bold border-1 border-fuchsia-500/80 cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }} onClick={() => setShowMore(true)}>
-                                                            <span> + {allServices?.length - 4} </span>
+                                                            <span> + {allServices?.length - 3} </span>
                                                         </button>
                                                     )}
                                                 </div>

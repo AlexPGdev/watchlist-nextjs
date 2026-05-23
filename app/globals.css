@@ -76,16 +76,9 @@ body {
   cursor: pointer;
 }
 
-.swiper-button-prev {
-  left: 5px !important;
-}
 
 .swiper-button-prev:disabled, .swiper-button-next:disabled {
   pointer-events: all !important;
-}
-
-.swiper-button-next {
-  right: 15px !important;
 }
 
 .swiper-pagination {

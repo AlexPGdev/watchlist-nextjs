@@ -112,9 +112,9 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
     
     return (
         <div className="flex flex-col items-center text-center relative select-none">
-            <div className="flex flex-row items-center flex-wrap justify-between w-full gap-10">
+            <div className="flex flex-row items-center flex-wrap justify-center w-full gap-5">
                 <a href="/" className="flex items-center gap-2.5 flex-wrap justify-center">
-                    <SvgComponent width={120} height={80} fill="#fff" />
+                    <SvgComponent width={100} height={60} fill="#fff" />
 
                     <span
                         className="text-4xl tracking-[6px] text-transparent bg-clip-text font-bold"
@@ -129,7 +129,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
 
                 <div
                     ref={searchRef}
-                    className="relative flex-1"
+                    className="relative flex-1 min-w-[200px]"
                     onFocus={() => setIsSearchFocused(true)}
                 >
                     <input 

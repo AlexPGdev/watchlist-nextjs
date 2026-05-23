@@ -65,7 +65,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
 
                         <button
                             disabled={scrollState[item.cacheKey]?.isAtLeft}
-                            className="absolute left-[5px] top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[44px] h-[44px] bg-cyan-800/60 rounded-full backdrop-blur-sm rounded-2xl cursor-pointer hover:scale-105 active:scale-100 disabled:cursor-default disabled:opacity-50 transition-all"
+                            className="absolute left-[5px] top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[36px] h-[36px] bg-cyan-800/60 rounded-full backdrop-blur-sm rounded-2xl cursor-pointer hover:scale-105 active:scale-100 disabled:cursor-default disabled:opacity-50 transition-all"
                             style={{ boxShadow: '-2px 2px 10px rgb(0, 0, 0, 0.5)' }}
                             onClick={() => {
                                 scrollRefs.current[item.cacheKey]?.scrollBy({
@@ -74,13 +74,13 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                                 })
                             }}
                         >
-                            <HiChevronLeft color={`rgba(${settings.primaryColorDark}, 1)`} style={{ marginRight: '2px' }} size={44} />
+                            <HiChevronLeft color={`rgba(${settings.primaryColorDark}, 1)`} style={{ marginRight: '2px' }} size={36} />
                         </button>
 
 
                         <button
                             disabled={scrollState[item.cacheKey]?.isAtRight}
-                            className="absolute right-[15px] top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[44px] h-[44px] bg-cyan-800/60 rounded-full backdrop-blur-sm rounded-2xl cursor-pointer hover:scale-105 active:scale-100 disabled:cursor-default disabled:opacity-50 transition-all"
+                            className="absolute right-[5px] lg:right-[15px] top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-[36px] h-[36px] bg-cyan-800/60 rounded-full backdrop-blur-sm rounded-2xl cursor-pointer hover:scale-105 active:scale-100 disabled:cursor-default disabled:opacity-50 transition-all"
                             style={{ boxShadow: '-2px 2px 10px rgb(0, 0, 0, 0.5)' }}
                             onClick={() => {
                                 scrollRefs.current[item.cacheKey]?.scrollBy({
@@ -89,7 +89,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                                 })
                             }}
                         >
-                            <HiChevronRight color={`rgba(${settings.primaryColorDark}, 1)`} style={{ marginLeft: '2px' }} size={44} />
+                            <HiChevronRight color={`rgba(${settings.primaryColorDark}, 1)`} style={{ marginLeft: '2px' }} size={36} />
                         </button>
                     </div>
                 </div>
