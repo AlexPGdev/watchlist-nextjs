@@ -106,8 +106,8 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
             }
         };
 
-        window.addEventListener("mousedown", handleClickOutside);
-        return () => window.removeEventListener("mousedown", handleClickOutside);
+        window.addEventListener("pointerdown", handleClickOutside);
+        return () => window.removeEventListener("pointerdown", handleClickOutside);
     }, [menuOpen]);
     
     return (
@@ -144,7 +144,6 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                     {showResults && isSearchFocused && (
                         <div
                             className="absolute left-0 right-0 top-full z-50 mt-3 max-h-80 w-full overflow-hidden overflow-y-auto rounded-3xl border border-cyan-800 bg-[#050814]/95 p-2 shadow-xl shadow-cyan-900/60 backdrop-blur-xl no-scrollbar"
-                            onMouseDown={(e) => e.preventDefault()}
                         >
                             {searchResults.length === 0 ? (
                                 <div className="px-4 py-4 text-center text-sm text-cyan-200/80">

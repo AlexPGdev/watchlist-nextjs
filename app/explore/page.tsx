@@ -18,6 +18,8 @@ import { Recommendations } from "../components/Recommendations";
 import { ExploreRightSide } from "../components/ExploreRightSide";
 import { ContentDetailsModal } from "../components/modals/ContentDetailsModal";
 import { useRouter } from "next/navigation";
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 
 export default function Page() {
 
@@ -54,12 +56,28 @@ export default function Page() {
       <div className="flex justify-between gap-25">
         <div className="flex flex-col w-3/4 gap-4">
 
-          {(recommendations.length > 0 && recommendations[0].objects.length > 0) && (
+          {(recommendations.length > 0 && recommendations[0].objects.length > 0) ? (
             <Trending item={recommendations[0]} onContentClick={handleContentClick} />
+          ) : (
+            <div className="flex flex-col select-none gap-2 ">
+              <div>
+                  <Skeleton width={'250px'} height={"58px"} className="rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+              </div>
+
+              <Skeleton width={'100%'} className="rounded-full " baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} style={{ aspectRatio: '2.05' }} />
+            </div>
           )}
 
-          {recommendations.length > 0 && (
+          {recommendations.length > 0 ? (
             <Recommendations recommendations={recommendations} onContentClick={handleContentClick} />
+          ) : (
+            <div className="flex flex-col select-none gap-2 ">
+              <Skeleton width={'250px'} height={"40px"} className="rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+              <Skeleton width={"100%"} height={"270px"} className="rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+
+              <Skeleton width={'250px'} height={"40px"} className="rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+              <Skeleton width={"100%"} height={"270px"} className="rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+            </div>
           )}
         </div>
 

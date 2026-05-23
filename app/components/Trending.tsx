@@ -19,8 +19,8 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
     return (
         <div className="flex flex-col select-none gap-2 ">
             <div>
-                <h1 className="text-2xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{item.title}</h1>
-                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{item?.subtitle}</h1>
+                <h1 className="text-2xl font-bold h-[30px]" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{item.title}</h1>
+                <h1 className="text-xl font-bold h-[28px]" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{item?.subtitle}</h1>
             </div>
 
             <div className="relative w-full">

@@ -20,7 +20,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
 
     const { addContent, content } = useContent();
 
-    const [images, setImages] = useState<{ backdrops: any[] }>({ backdrops: [] });
+    const [images, setImages] = useState<{ backdrops: any[], posters: any[] }>({ backdrops: [], posters: [] });
     const [streamingServices, setStreamingServices] = useState<any>(null);
     const [allServices, setAllServices] = useState<any>(null);
     const [showMore, setShowMore] = useState(false);
@@ -117,7 +117,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
     const handleOnClose = () => {
         setStreamingServices(null)
         setAllServices(null)
-        setImages({ backdrops: [] })
+        setImages({ backdrops: [], posters: [] })
         setCast(null)
         setCrew(null)
         setCreators([])
@@ -273,7 +273,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                     >
                         <motion.div
                             ref={modalRef}
-                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-1/2 max-h-[80%] z-10 bg-black/60 overflow-hidden"
+                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-3/5 max-h-[80%] z-10 bg-black/60 overflow-hidden"
                             initial={{ opacity: 0, y: 20, scale: 0.5 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.5 }}
@@ -355,12 +355,12 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                     ))}
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <div className="flex w-[180px] h-[270px]">
+                                <div className="flex justify-center gap-5">
+                                    <div className="flex w-[20%]">
                                         <img src={`https://image.tmdb.org/t/p/w500/${contentToShow.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                     </div>
 
-                                    <div className="flex ml-auto mr-auto gap-2 rounded-2xl overflow-hidden h-[270px]">
+                                    <div className="flex  gap-2 rounded-2xl overflow-hidden w-[60%]">
                                         <iframe
                                             width="100%"
                                             height="100%"
@@ -369,31 +369,31 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                         />
                                     </div>
 
-                                    <div className="flex ">
-                                        <div className="z-2 w-[180px] h-[270px]">
-                                            {(images && images.backdrops && images.backdrops[0]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[0].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                    <div className="flex w-[20%] ">
+                                        <div className="z-2 w-[80%] ">
+                                            {(images && images.posters && images.posters[1]) && (
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
-                                        <div className=" z-1 w-[180px] h-[270px] -ml-40 scale-98">
-                                            {(images && images.backdrops && images.backdrops[1]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                        <div className=" z-1  w-[20%] -ml-5 scale-98">
+                                            {(images && images.posters && images.posters[2]) && (
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
                                         
-                                        <div className=" z-0 w-[180px] h-[270px] -ml-40 scale-96">
-                                            {(images && images.backdrops && images.backdrops[2]) && (
-                                                <img src={`https://image.tmdb.org/t/p/w500/${images.backdrops[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
+                                        <div className=" z-0  w-[20%] -ml-5 scale-96">
+                                            {(images && images.posters && images.posters[3]) && (
+                                                <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={contentToShow.title} />
                                             )}
                                         </div>
                                     </div> 
                                 </div>
 
-                                <div className="flex justify-between gap-10">
-                                    <div className="flex flex-col gap-4 w-[70%]">
+                                <div className="flex justify-between flex-col lg:flex-row">
+                                    <div className="flex flex-col gap-4 w-[full] lg:w-[70%]">
                                         <div className="flex flex-col text-zinc-200 text-md text-justify gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Overview</h1>
-                                            <p className="p-1">{contentToShow.description}</p>
+                                            <p className="p-1 text-lg">{contentToShow.description}</p>
                                         </div>
 
                                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
@@ -401,12 +401,12 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                             {streamingServices ? (
                                                 <div className="flex p-1 gap-4 flex-wrap select-none">
                                                     {allServices?.slice(0, showMore ? allServices?.length : 5).map((service: any) => (
-                                                        <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-14 h-14 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
+                                                        <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-16 h-16 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
                                                             <img src={`https://image.tmdb.org/t/p/original${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
                                                         </a>
                                                     ))}
                                                     {(allServices?.length > 5 && !showMore) && (
-                                                        <button className="w-14 h-14 rounded-lg justify-center items-center flex gap-1 bg-fuchsia-800/30 text-md font-bold border-1 border-fuchsia-500/80 cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }} onClick={() => setShowMore(true)}>
+                                                        <button className="w-16 h-16 rounded-lg justify-center items-center flex gap-1 bg-fuchsia-800/30 text-md font-bold border-1 border-fuchsia-500/80 cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }} onClick={() => setShowMore(true)}>
                                                             <span> + {allServices?.length - 4} </span>
                                                         </button>
                                                     )}
@@ -458,8 +458,8 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                                     return (
                                                         (creators && creators.length > 0) && (
                                                             <div>
-                                                                <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Created By</p>
-                                                                <p className="text-sm">{creators.map((c : { name: string; }) => c.name).join(', ')}</p>
+                                                                <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Created By</p>
+                                                                <p className="text-md">{creators.map((c : { name: string; }) => c.name).join(', ')}</p>
                                                             </div>
                                                         )
                                                     )
@@ -471,8 +471,8 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                                             <div>
                                                                 {directors.length > 0 && (
                                                                     <div>
-                                                                        <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{directors.length > 1 ? 'Directors' : 'Director'}</p>
-                                                                        {directors.map((c : { name: string; }) => <p className="text-sm" key={c.name} >{c.name}</p>)}
+                                                                        <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{directors.length > 1 ? 'Directors' : 'Director'}</p>
+                                                                        {directors.map((c : { name: string; }) => <p className="text-md" key={c.name} >{c.name}</p>)}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -487,8 +487,8 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                                         <>
                                                             {uniqueNovelNames.length > 0 && (
                                                                 <div>
-                                                                    <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Novel</p>
-                                                                    <p className="text-sm">{uniqueNovelNames.join(', ')}</p>
+                                                                    <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Novel</p>
+                                                                    <p className="text-md">{uniqueNovelNames.join(', ')}</p>
                                                                 </div>
                                                             )}
                                                         </>
@@ -505,15 +505,15 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                                         <>
                                                             {uniqueWriterNames.length > 0 ? (
                                                                 <div>
-                                                                    <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{uniqueWriterNames.length > 1 ? "Writers" : "Writer"}</p>
-                                                                    <p className="text-sm">{uniqueWriterNames.join(', ')}</p>
+                                                                    <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{uniqueWriterNames.length > 1 ? "Writers" : "Writer"}</p>
+                                                                    <p className="text-md">{uniqueWriterNames.join(', ')}</p>
                                                                 </div>
                                                             ) : (
                                                                 <>
                                                                     {uniqueWritingNames.length > 0 && (
                                                                         <div>
-                                                                            <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{uniqueWritingNames.length > 1 ? "Writers" : "Writer"}</p>
-                                                                            <p className="text-sm">{uniqueWritingNames.join(', ')}</p>
+                                                                            <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{uniqueWritingNames.length > 1 ? "Writers" : "Writer"}</p>
+                                                                            <p className="text-md">{uniqueWritingNames.join(', ')}</p>
                                                                         </div>
                                                                     )}
                                                                 </>
@@ -528,8 +528,8 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                                         <>
                                                             {production.length > 0 && (
                                                                 <div>
-                                                                    <p className="font-bold text-sm" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{production.length > 1 ? "Production Companies" : "Production Company"}</p>
-                                                                    <p className="text-sm">{production.join(', ')}</p>
+                                                                    <p className="font-bold text-lg" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{production.length > 1 ? "Production Companies" : "Production Company"}</p>
+                                                                    <p className="text-md">{production.join(', ')}</p>
                                                                 </div>
                                                             )}
                                                         </>
@@ -540,15 +540,15 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                                     </div>
 
                                     {(alsoWatch && alsoWatch.length > 0) && (
-                                        <div className="flex flex-col text-zinc-200 text-md gap-1 w-[220px]" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                                        <div className="flex flex-col text-zinc-200 text-md gap-1 w-full lg:w-[20%]" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <h1 className="text-xl font-bold text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Also Watch</h1>
 
-                                            <div className="flex flex-col gap-4 w-4/6 ml-auto mr-auto">
+                                            <div className="flex flex-row lg:flex-col gap-4 w-full ml-auto mr-auto">
                                                 {alsoWatch.slice(0, 3).map((c: any) => (
                                                     <button 
                                                         key={c.id ?? c.tmdbId ?? c.title} 
-                                                        className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2 bg-black/50" 
-                                                        style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}
+                                                        className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2" 
+                                                        style={{ color: `rgba(${settings.secondaryColor}, 1)`, }}
                                                         onClick={() => router.push(`?${type}=${c.id}`)}
                                                     >
                                                         <img src={`https://image.tmdb.org/t/p/original${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />

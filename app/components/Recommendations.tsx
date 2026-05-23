@@ -42,7 +42,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                         <h1 className="text-lg font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{item.subtitle}</h1>
                     </div>
 
-                    <div className="relative w-full">
+                    <div className="relative w-full h-[270px]">
                         <div
                             ref={(el) => {
                                 scrollRefs.current[item.cacheKey] = el
