@@ -89,6 +89,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                 
                 setShowResults(true)
             } catch (error) {
+                setSearchResults([])
                 console.error("Error searching movies:", error)
             }
         }, 300)
@@ -145,11 +146,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                         <div
                             className="absolute left-0 right-0 top-full z-50 mt-3 max-h-80 w-full overflow-hidden overflow-y-auto rounded-3xl border border-cyan-800 bg-[#050814]/95 p-2 shadow-xl shadow-cyan-900/60 backdrop-blur-xl no-scrollbar"
                         >
-                            {searchResults.length === 0 ? (
-                                <div className="px-4 py-4 text-center text-sm text-cyan-200/80">
-                                    No results found.
-                                </div>
-                            ) : (
+                            {searchResults.length > 0 ? (
                                 searchResults.map((result: any) => (
                                     <button 
                                         key={result.id}
@@ -160,7 +157,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                                         <div className="flex gap-2 w-full h-20 items-center">
                                             <div className="w-15">
                                                 <img
-                                                    src={result.poster_path === undefined ? `https://alexpgdev.com/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
+                                                    src={result.mediaType.toLowerCase() === "person" ? `https://image.tmdb.org/t/p/w500/${result.profile_path}` : result.poster_path === undefined ? `https://alexpgdev.com/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
                                                     className="w-full h-full object-cover rounded-lg" 
                                                     alt={result.title}
                                                     draggable={false}
@@ -177,6 +174,10 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                                         </div>
                                     </button>
                                 ))
+                            ) : (
+                                <div className="px-4 py-4 text-center text-sm text-cyan-200/80">
+                                    No results found.
+                                </div>
                             )}
                         </div>
                     )}

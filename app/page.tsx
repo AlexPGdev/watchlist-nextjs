@@ -42,7 +42,7 @@ export default function Home() {
   }
 
   const handleContentClick = useCallback((content: Content) => {
-    console.log({content})
+    console.log(`Content clicked: ${content.title}`)
     router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
