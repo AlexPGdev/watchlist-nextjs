@@ -31,6 +31,46 @@ export default function Home() {
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [currentScrollIndex, setCurrentScrollIndex] = useState(0);
+  const [focusedTitle, setFocusedTitle] = useState('');
+
+  useEffect(() => {
+    let debounceTimeout = setTimeout(() => {
+      setSearchResults([])
+      // console.log("Search query:", searchQuery)
+      document.querySelectorAll('.content-card').forEach((card) => {
+        if(`${card.id}`.toLowerCase().includes(searchQuery.toLowerCase())) {
+          // card.classList.add('active')
+          // card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          setSearchResults(prevResults => {
+            if(!prevResults.some(result => result.id === card.id)) {
+              return [...prevResults, { card }]
+            } else {
+              return prevResults
+            }
+          })
+
+          setFocusedTitle(searchQuery.toLowerCase())
+        }
+      })
+    }, 300);
+
+    return () => clearTimeout(debounceTimeout);
+  }, [searchQuery])
+
+  useEffect(() => {
+    if(searchResults.length > 0) {
+      if(searchResults[currentScrollIndex]){
+        searchResults[currentScrollIndex].card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        setCurrentScrollIndex(0)
+      }
+    }
+  }, [searchResults, currentScrollIndex]);
+  
+
   const scrollToSection = (section: number) => {
     return () => {
       const sectionElement = document.getElementById(`section-${section}`)
@@ -66,6 +106,8 @@ export default function Home() {
     setShowModal(true)
   }, []);
 
+
+
   // const handleAddContent = (tmdbId: number, mediaType: string, logged: boolean) => {
   //   addContent(tmdbId, mediaType, logged)
   // }
@@ -77,9 +119,8 @@ export default function Home() {
 
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Watchlist</h1>
-        <input type="text" placeholder="Search in watchlist..." className="w-full bg-black/50 rounded-2xl border-1 border-cyan-800 p-2 px-4 shadow-xs shadow-cyan-800 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
 
-        <FilterTab scrollToSection={scrollToSection} />
+        <FilterTab scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} />
 
         <LayoutGroup>
           <ContentGrid
@@ -88,6 +129,7 @@ export default function Home() {
             onStatusChange={handleStatusChange}
             onRemoveContent={handleRemoveContent}
             fromWatchlist={true}
+            focusedTitle={focusedTitle}
           />
         </LayoutGroup>
 

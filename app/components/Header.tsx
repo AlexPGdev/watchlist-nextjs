@@ -44,16 +44,12 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
 
             const debounceTimeout = setTimeout(async () => {
                 try {
-                    console.log(encodeURIComponent(effectiveQuery))
                     const response = await fetch(`https://api.spectaer.com/watchlist/api/search?q=${encodeURIComponent(effectiveQuery.replace('@', ''))}`)
                     const data = await response.json()
 
                     if (data.Error) {
                         setSearchResults([])
                     } else {
-
-                        console.log(data)
-
                         setSearchResults(data)
                     }
 
@@ -81,9 +77,6 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                 if (data.Error) {
                     setSearchResults([])
                 } else {
-
-                    console.log(data)
-
                     setSearchResults(data)
                 }
                 

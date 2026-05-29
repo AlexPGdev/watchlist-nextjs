@@ -9,9 +9,10 @@ interface ContentGridProps {
     onStatusChange?: (id: number) => void;
     onRemoveContent?: (id: number) => void;
     fromWatchlist?: boolean;
+    focusedTitle: string;
 }
 
-export const ContentGrid = React.memo(function ContentGrid({ content, onContentClick, onStatusChange, onRemoveContent, fromWatchlist }: ContentGridProps) {
+export const ContentGrid = React.memo(function ContentGrid({ content, onContentClick, onStatusChange, onRemoveContent, fromWatchlist, focusedTitle }: ContentGridProps) {
 
     const { watchedContents, startedContents, toWatchContents } = useMemo(() => {
 
@@ -42,6 +43,8 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                             {watchedContents.map(content => (
                                 <motion.li
                                     key={content.id}
+                                    className="content-card"
+                                    id={`${content.title}`}
                                     layout
                                     layoutId={`content-${content.id}`}
                                     initial={{ opacity: 0, scale: 0.9 }}
@@ -51,7 +54,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} focusedTitle={focusedTitle} />
                                 </motion.li>
                             ))}
                         </ul>
@@ -64,6 +67,8 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                             {startedContents.map(content => (
                                 <motion.li
                                     key={content.id}
+                                    className="content-card"
+                                    id={`${content.title}`}
                                     layout
                                     layoutId={`content-${content.id}`}
                                     initial={{ opacity: 0, scale: 0.9 }}
@@ -73,7 +78,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} focusedTitle={focusedTitle} />
                                 </motion.li>
                             ))}
                         </ul>
@@ -86,6 +91,8 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                             {toWatchContents.map(content => (
                                 <motion.li
                                     key={content.id}
+                                    className="content-card"
+                                    id={`${content.title}`}
                                     layout
                                     layoutId={`content-${content.id}`}
                                     initial={{ opacity: 0, scale: 0.9 }}
@@ -95,7 +102,7 @@ export const ContentGrid = React.memo(function ContentGrid({ content, onContentC
                                         opacity: { duration: 0.2 }
                                     }}
                                 >
-                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} />
+                                    <ContentCard content={content} onClick={onContentClick} onStatusChange={onStatusChange} onRemoveContent={onRemoveContent} fromWatchlist={fromWatchlist} focusedTitle={focusedTitle} />
                                 </motion.li>
                             ))}
                         </ul>

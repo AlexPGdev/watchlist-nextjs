@@ -13,9 +13,10 @@ interface ContentCardProps {
     onStatusChange?: (id: number) => void;
     onRemoveContent?: (id: number) => void;
     fromWatchlist?: boolean;
+    focusedTitle: string;
 }
 
-export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist }: ContentCardProps) {
+export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist, focusedTitle }: ContentCardProps) {
     const [isButtonActive, setIsButtonActive] = React.useState(false);
 
     const handleCardPointerDown = (e: React.PointerEvent) => {
@@ -30,6 +31,38 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     const handlePointerUp = () => {
         setIsButtonActive(false);
     };
+
+    const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const renderTitleWithHighlight = () => {
+        const query = typeof focusedTitle === 'string' ? focusedTitle.trim() : '';
+        if (!query) return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+
+        try {
+            const q = query.toLowerCase();
+            const regex = new RegExp("(" + escapeRegex(q) + ")", 'i');
+            const match = content.title.match(regex);
+
+            if (!match || match.index === undefined) {
+                return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+            }
+
+            const start = match.index;
+            const matchedText = match[0];
+            const before = content.title.substring(0, start);
+            const after = content.title.substring(start + matchedText.length);
+
+            return (
+                <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>
+                    {before}
+                    <span className="font-bold text-md tracking-wider inline" style={{ color: `#fff7a8`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{matchedText}</span>
+                    {after}
+                </h2>
+            );
+        } catch (e) {
+            return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+        }
+    }
 
     return (
         <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} select-none parallax-effect-img ${!isButtonActive ? "active:scale-95" : ""}`}>
@@ -62,9 +95,10 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                             <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} draggable={false} />
                             <div className="absolute w-full h-20 bottom-0 bg-gradient-to-t from-black to-transparent"></div>
                             <div className="flex flex-col absolute bottom-2 left-2 gap-1 ">
-                                <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>
+                                {/* <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>
                                     {content.title}
-                                </h2>
+                                </h2> */}
+                                {renderTitleWithHighlight()}
                                 <div className="flex gap-1 flex-nowrap">
                                     <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.releaseDate.substring(0, 4)}</p>
                                     <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>

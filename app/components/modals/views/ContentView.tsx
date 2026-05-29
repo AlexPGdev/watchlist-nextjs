@@ -57,6 +57,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     data.content_ratings?.results?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")?.rating
 
                 setSelectedContent({
+                    id: data.id,
                     posterPath: data.images.posters[0]?.file_path,
                     logoPath: data.images.logos[0]?.file_path,
                     logoAspectRatio: data.images.logos[0]?.aspect_ratio,
@@ -192,9 +193,9 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     }
 
     const handleAddWatchlist = () => {
-        if (!selectedContent) return
+        if (!selectedContent) return;
 
-        addContent(selectedContent?.tmdbId ? selectedContent?.tmdbId : selectedContent?.id, info.type, false)
+        addContent(selectedContent?.id, info.type, false)
 
         const buttonRect = buttonRef.current?.getBoundingClientRect();
         const modalRect = modalRef.current?.getBoundingClientRect();
@@ -546,7 +547,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
 
             </div>
 
-            <div className="absolute bottom-10 w-full flex gap-2 justify-center">
+            <div className="absolute bottom-10 w-full flex gap-2 justify-center z-10">
                 <button
                     id="add-to-watchlist"
                     ref={buttonRef}
