@@ -57,7 +57,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                         >
                             {item.objects.map((object: any) => (
                                 <div key={object.movie ? object.movie.id : object.id} className="shrink-0 w-[180px]">
-                                    <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} />
+                                    <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} focusedTitle={''} />
                                 </div>
                             ))}
                         </div>
