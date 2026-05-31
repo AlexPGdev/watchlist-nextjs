@@ -140,8 +140,14 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             const objectsWithBackdrops = await Promise.all(
                 objects.map(async (item: any) => {
                 try {
+                    console.log({item})
+
+                    let isMovie = item.runtime !== null || item.totalSeasons <= 0;
+
+                    console.log({isMovie})
+
                     const backdropRes = await fetch(
-                    `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=movie`
+                        `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=${isMovie === true ? 'movie' : 'tv_series'}`
                     );
                     const backdropData = await backdropRes.json();
                     return {

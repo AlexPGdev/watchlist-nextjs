@@ -35,7 +35,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
 
     return (
         recommendations.map((item: any) => (
-            item.cacheKey !== 'trending_movies' && (
+            item.cacheKey !== 'trending' && (
                 <div key={item.cacheKey} className="flex flex-col select-none">
                     <div>
                         <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{item.title}</h1>

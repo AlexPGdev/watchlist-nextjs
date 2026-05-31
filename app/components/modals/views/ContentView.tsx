@@ -69,6 +69,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     trailerPath: data.videos?.results[0]?.key,
                     certification: certification,
                     runtime: data.runtime,
+                    genres: data.genres?.map((g: { name: string }) => g.name) || [],
                 })
 
                 setImages(data.images)
