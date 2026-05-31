@@ -26,6 +26,8 @@ export default function Home() {
 
   const router = useRouter();
 
+  const [filteredContent, setFilteredContent] = useState<Content[]>(content)
+
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -35,6 +37,12 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentScrollIndex, setCurrentScrollIndex] = useState(0);
   const [focusedTitle, setFocusedTitle] = useState('');
+
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    setFilteredContent(content)
+  }, [content])
 
   useEffect(() => {
     let debounceTimeout = setTimeout(() => {
@@ -69,6 +77,22 @@ export default function Home() {
       }
     }
   }, [searchResults, currentScrollIndex]);
+
+  useEffect(() => {
+    setFilteredContent(content.filter((c) => {
+      let matches = true
+
+      if (selectedFilters.year && selectedFilters.year.length > 0) {
+        matches = matches && selectedFilters.year.includes(c.releaseDate?.substring(0, 4) ?? "")
+      }
+
+      if (selectedFilters.genre && selectedFilters.genre.length > 0) {
+        matches = matches && selectedFilters.genre.some((g) => c.genres?.includes(g))
+      }
+
+      return matches
+    }))
+  }, [content, selectedFilters])
   
 
   const scrollToSection = (section: number) => {
@@ -120,11 +144,11 @@ export default function Home() {
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Watchlist</h1>
 
-        <FilterTab scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} />
+        <FilterTab content={content} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
 
         <LayoutGroup>
           <ContentGrid
-            content={content} 
+            content={filteredContent} 
             onContentClick={handleContentClick}
             onStatusChange={handleStatusChange}
             onRemoveContent={handleRemoveContent}

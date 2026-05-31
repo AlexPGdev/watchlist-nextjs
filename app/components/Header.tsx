@@ -202,7 +202,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                         </button>
 
                         {menuOpen && (
-                            <div className="absolute right-0 mt-2 w-44 rounded-3xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50 overflow-hidden">
+                            <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50 overflow-hidden">
                                 <a
                                     href="/profile"
                                     className="block w-full px-4 py-3 text-left text-sm text-cyan-300 cursor-pointer hover:bg-cyan-900/80 transition-colors"

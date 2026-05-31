@@ -47,16 +47,16 @@ export const Stats = React.memo(function Stats({ stats }: StatsProps) {
     const animatedStreak = useAnimatedNumber(stats.dailyStreak)
 
     return (
-        <div className="flex items-center justify-center gap-5 flex-wrap select-none">
-            <div className="w-40 px-10 py-5 bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30">
+        <div className="flex items-center justify-center gap-5 select-none">
+            <div className="max-w-40 w-[30%] bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30 items-center content-center aspect-3/2">
                 <h1 className="text-center text-3xl font-bold" style={{color: `rgba(${settings.secondaryColor}, 1)`}}>{animatedTotal}</h1>
                 <p className="text-center" style={{color: `rgba(${settings.primaryColorDark}, 1)`}}>Total</p>
             </div>
-            <div className="w-40 px-10 py-5 bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30">
+            <div className="max-w-40 w-[30%] bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30 items-center content-center aspect-3/2">
                 <h1 className="text-center text-3xl font-bold" style={{color: `rgba(${settings.secondaryColor}, 1)`}}>{animatedWatched}</h1>
                 <p className="text-center" style={{color: `rgba(${settings.primaryColorDark}, 1)`}}>Watched</p>
             </div>
-            <div className="w-40 px-10 py-5 bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30">
+            <div className="max-w-40 w-[30%] bg-cyan-800/10 rounded-2xl shadow-inner shadow-cyan-200/30 items-center content-center aspect-3/2">
                 <h1 className="text-center text-3xl font-bold" style={{color: `rgba(${settings.secondaryColor}, 1)`}}>{animatedToWatch}</h1>
                 <p className="text-center" style={{color: `rgba(${settings.primaryColorDark}, 1)`}}>To Watch</p>
             </div>
