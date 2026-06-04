@@ -207,7 +207,7 @@ export default function Home() {
 
         
         {showRecentWatched ? (
-          <button className="flex flex-col gap-2 p-2 text-start rounded-2xl bg-cyan-800/40 hover:bg-cyan-700/60 transition-all select-none cursor-pointer" onClick={handleContentClick.bind(null, recentWatched)}>
+          <button className="flex flex-col gap-2 p-2 text-start rounded-2xl bg-cyan-800/40 hover:bg-cyan-700/60 transition-all select-none cursor-pointer" onClick={handleContentClick.bind(null, recentWatched as Content)}>
             <p className="text-lg font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Quick View</p>
             <div className="flex gap-2">
               <img src={`https://image.tmdb.org/t/p/original/${recentWatched?.posterPath}`} className="h-25 w-auto rounded-lg" alt={recentWatched?.title} />
