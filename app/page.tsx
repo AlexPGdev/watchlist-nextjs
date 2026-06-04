@@ -4,11 +4,11 @@ import { FilterTab } from "./components/FilterTab";
 import { Header } from "./components/Header";
 import { ContentDetailsModal } from "./components/modals/ContentDetailsModal";
 import { ContentCard } from "./components/ContentCard";
-import { ContentGrid } from "./components/ContentGrid";
+import { ContentGrid, ContentGridHandle } from "./components/ContentGrid";
 import { Stats } from "./components/Stats";
 import settings from "./constants/settings.json";
 import { useContent } from "./hooks/useContent";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Content } from "./types/content";
 import { LayoutGroup } from "motion/react";
 import { LoginModal } from "./components/modals/LoginModal";
@@ -156,15 +156,13 @@ export default function Home() {
   }, [content, recentWatched, quickViewDurationMs])
   
 
+  const contentGridRef = useRef<ContentGridHandle>(null);
+
   const scrollToSection = (section: number) => {
     return () => {
-      const sectionElement = document.getElementById(`section-${section}`)
-      if (!sectionElement) return
-
-      const offset = sectionElement.offsetTop - 100
-      window.scrollTo({ top: offset, behavior: 'smooth' })
-    }
-  }
+      contentGridRef.current?.scrollToSection(section);
+    };
+  };
 
   const handleContentClick = useCallback((content: Content) => {
     console.log(`Content clicked: ${content.title}`)
@@ -244,7 +242,8 @@ export default function Home() {
 
         <LayoutGroup>
           <ContentGrid
-            content={filteredContent} 
+            ref={contentGridRef}
+            content={filteredContent}
             onContentClick={handleContentClick}
             onStatusChange={handleStatusChange}
             onRemoveContent={handleRemoveContent}

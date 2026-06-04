@@ -22,26 +22,30 @@ export const FilterTab = React.memo(function FilterTab( { scrollToSection, searc
     const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
 
     const handleScroll = () => {
-        let watchedGridElement = document.getElementById('section-0') as HTMLElement
-        let startedGridElement = document.getElementById('section-1') as HTMLElement
-        let toWatchGridElement = document.getElementById('section-2') as HTMLElement
+        const sectionElements = [0, 1, 2]
+            .map((index) => document.getElementById(`section-${index}`))
+            .filter((element): element is HTMLElement => element !== null);
 
-        if(watchedGridElement && startedGridElement && toWatchGridElement) {
-            const scrollPosition = window.scrollY + 150
-            
-            if(scrollPosition >= toWatchGridElement.offsetTop) {
-                setSelectedFilter(2)
-            } else if(scrollPosition >= startedGridElement.offsetTop) {
-                setSelectedFilter(1)
-            } else if(scrollPosition >= watchedGridElement.offsetTop) {
-                setSelectedFilter(0)
+        if (sectionElements.length === 0) return;
+
+        const scrollThreshold = 150;
+        let activeSection = Number(sectionElements[0].id.replace("section-", ""));
+
+        for (const sectionElement of sectionElements) {
+            if (sectionElement.getBoundingClientRect().top <= scrollThreshold) {
+                activeSection = Number(sectionElement.id.replace("section-", ""));
             }
         }
-    }
-    
+
+        setSelectedFilter(activeSection);
+    };
+
     useEffect(() => {
-        document.addEventListener('scroll', handleScroll)
-    }, [])
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll();
+
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [content]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
