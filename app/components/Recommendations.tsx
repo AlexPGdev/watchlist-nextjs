@@ -1,5 +1,6 @@
 import React from "react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+import { GoChevronRight } from "react-icons/go";
 import settings from '../constants/settings.json'
 import { ContentCard } from "./ContentCard";
 import { Content } from "../types/content";
@@ -37,10 +38,16 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
         recommendations.map((item: any) => (
             item.cacheKey !== 'trending' && (
                 <div key={item.cacheKey} className="flex flex-col select-none">
-                    <div>
-                        <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{item.title}</h1>
-                        <h1 className="text-lg font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{item.subtitle}</h1>
-                    </div>
+                    <a className="flex gap-1 cursor-pointer group" href={`/explore/${item.cacheKey}`}>
+                        <div>
+                            <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{item.title}</h1>
+                            <h1 className="text-lg font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{item.subtitle}</h1>
+                        </div>
+
+                        <button>
+                            <GoChevronRight className="cursor-pointer text-cyan-500 group-hover:text-cyan-100 transition-all" size={48} />
+                        </button>
+                    </a>
 
                     <div className="relative w-full h-[270px]">
                         <div

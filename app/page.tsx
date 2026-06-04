@@ -40,6 +40,9 @@ export default function Home() {
 
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
 
+  const [showRecentWatched, setShowRecentWatched] = useState(false)
+  const [quickViewRemainingMs, setQuickViewRemainingMs] = useState(0)
+
   useEffect(() => {
     setFilteredContent(content)
   }, [content])
@@ -94,6 +97,64 @@ export default function Home() {
     }))
   }, [content, selectedFilters])
   
+  const recentWatched = useMemo(() => {
+    const watchedItems = content.filter((c) => c.watched && c.watchDate)
+    if (watchedItems.length === 0) return null
+    return watchedItems.reduce((a, b) => (a.watchDate > b.watchDate ? a : b))
+  }, [content])
+
+  const quickViewDurationMs = useMemo(() => {
+    if (!recentWatched) return 0
+    return ((recentWatched.runtime || 0) + 30) * 60_000
+  }, [recentWatched])
+
+  const quickViewExpiresIn = useMemo(() => {
+    if (!showRecentWatched || quickViewRemainingMs <= 0) return ""
+    const totalMinutes = Math.ceil(quickViewRemainingMs / 60_000)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+
+    if (hours === 0) {
+      return `${minutes}m`
+    }
+
+    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+  }, [quickViewRemainingMs, showRecentWatched])
+
+  const quickViewProgress = useMemo(() => {
+    if (!quickViewDurationMs || quickViewRemainingMs <= 0) return 0
+    return (quickViewRemainingMs / quickViewDurationMs) * 100
+  }, [quickViewDurationMs, quickViewRemainingMs])
+
+  useEffect(() => {
+    const updateRecentWatched = () => {
+      if (!recentWatched?.watchDate || quickViewDurationMs <= 0) {
+        setShowRecentWatched(false)
+        setQuickViewRemainingMs(0)
+        return false
+      }
+
+      const elapsed = Date.now() - recentWatched.watchDate
+      const remaining = quickViewDurationMs - elapsed
+      const isActive = remaining > 0
+
+      setQuickViewRemainingMs(Math.max(0, remaining))
+      setShowRecentWatched(isActive)
+      return isActive
+    }
+
+    const isActive = updateRecentWatched()
+    if (!isActive) return
+
+    const interval = setInterval(() => {
+      if (!updateRecentWatched()) {
+        clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [content, recentWatched, quickViewDurationMs])
+  
 
   const scrollToSection = (section: number) => {
     return () => {
@@ -137,12 +198,47 @@ export default function Home() {
   // }
 
   return (
-    <div className="page flex flex-col p-4 sm:p-4 md:p-4 md:px-[15%] lg:px-[18%] gap-5 md:gap-5">
+    <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
       <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Watchlist</h1>
+
+        
+        {showRecentWatched ? (
+          <button className="flex flex-col gap-2 p-2 text-start rounded-2xl bg-cyan-800/40 hover:bg-cyan-700/60 transition-all select-none cursor-pointer" onClick={handleContentClick.bind(null, recentWatched)}>
+            <p className="text-lg font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Quick View</p>
+            <div className="flex gap-2">
+              <img src={`https://image.tmdb.org/t/p/original/${recentWatched?.posterPath}`} className="h-25 w-auto rounded-lg" alt={recentWatched?.title} />
+              <div className="flex flex-col justify-between">
+                <div>
+                  <p className="text-lg font-bold leading-none" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{recentWatched?.title}</p>
+                  <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{recentWatched?.releaseDate.substring(0, 4)}</p>
+                </div>
+
+                  <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
+                    Marked as watched at {recentWatched?.watchDate ? new Date(recentWatched?.watchDate).toLocaleTimeString([], { timeStyle: 'short', hourCycle: 'h24' }) : ''}
+                  </p>
+                <div>
+                  {showRecentWatched ? (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
+                        Quick View expires in {quickViewExpiresIn}
+                      </p>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
+                        <div
+                          className="h-full rounded-full bg-cyan-400 transition-all duration-300"
+                          style={{ width: `${quickViewProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </button>
+        ) : null}
 
         <FilterTab content={content} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
 

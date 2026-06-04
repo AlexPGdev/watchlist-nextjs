@@ -4,15 +4,9 @@ import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { Header } from "../components/Header";
 import { useAuth } from "../hooks/useAuth";
 import { useContent } from "../hooks/useContent";
-import Cookies from 'js-cookie'
 import { Content } from "../types/content";
-import settings from "../constants/settings.json";
-import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { Navigation } from 'swiper/modules';
-import { ContentCard } from "../components/ContentCard";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import { Trending } from "../components/Trending";
 import { Recommendations } from "../components/Recommendations";
 import { ExploreRightSide } from "../components/ExploreRightSide";
@@ -50,7 +44,7 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="page flex flex-col p-4 sm:p-4 md:p-4 md:px-[15%] lg:px-[18%] gap-5 md:gap-5 tracking-wider">
+    <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
       <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
 
       <div className="flex flex-col justify-between gap-25 lg:flex-row">
