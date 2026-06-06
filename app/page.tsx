@@ -166,13 +166,18 @@ export default function Home() {
 
   const handleContentClick = useCallback((content: Content) => {
     console.log(`Content clicked: ${content.title}`)
+
+    let scrollY = window.scrollY
+
     router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
 
-    // setTimeout(() => {
-    //   setSelectedContent(newContent[0])
-    // }, 5000)
+    setTimeout(() => {
+      console.log("Scrolling to:", scrollY)
+      window.scrollTo(0, scrollY)
+      scrollY = 0
+    }, 300)
   }, []);
 
   const handleStatusChange = useCallback((id: number) => {

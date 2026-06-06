@@ -236,7 +236,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                 )}
             </div>
 
-            <div className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
+            <div ref={modalRef} className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
                 <img
                     src={`https://image.tmdb.org/t/p/w500//${selectedContent?.logoPath}`}
                     style={{ justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(selectedContent?.logoAspectRatio).width, height: logoSize(selectedContent?.logoAspectRatio).height, marginBottom: 5 }}

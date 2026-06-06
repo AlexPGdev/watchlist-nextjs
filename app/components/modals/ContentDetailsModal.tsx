@@ -19,6 +19,21 @@ interface ContentDetailsModalProps {
 export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedContent, onClose, open }: ContentDetailsModalProps) {
     const modalRef = useRef<HTMLDivElement | null>(null);
 
+    useEffect(() => {
+        if (!open) return;
+
+        const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
+
+        document.body.style.overflow = "hidden";
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+        return () => {
+        document.body.style.overflow = "";
+        document.body.style.paddingRight = "";
+        };
+    }, [open]);
+
     const router = useRouter();
     const searchParams = useSearchParams();
     const [type, id] = [...searchParams.entries()][0] || [];
