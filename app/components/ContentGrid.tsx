@@ -17,6 +17,7 @@ interface ContentGridProps {
     onRemoveContent?: (id: number) => void;
     fromWatchlist?: boolean;
     focusedTitle: string;
+    ownerPage: boolean;
 }
 
 interface VirtualContentSectionProps {
@@ -28,6 +29,7 @@ interface VirtualContentSectionProps {
     onRemoveContent?: (id: number) => void;
     fromWatchlist?: boolean;
     focusedTitle: string;
+    ownerPage: boolean;
 }
 
 const MIN_COLUMN_WIDTH = 180;
@@ -55,6 +57,7 @@ const VirtualContentSection = React.memo(
             onRemoveContent,
             fromWatchlist,
             focusedTitle,
+            ownerPage,
         },
         ref
     ) {
@@ -160,6 +163,7 @@ const VirtualContentSection = React.memo(
                                             onRemoveContent={onRemoveContent}
                                             fromWatchlist={fromWatchlist}
                                             focusedTitle={focusedTitle}
+                                            ownerPage={ownerPage}
                                         />
                                     </div>
                                 ))}
@@ -182,6 +186,7 @@ export const ContentGrid = React.memo(
             onRemoveContent,
             fromWatchlist,
             focusedTitle,
+            ownerPage,
         },
         ref
     ) {
@@ -236,6 +241,7 @@ export const ContentGrid = React.memo(
                 onRemoveContent={onRemoveContent}
                 fromWatchlist={fromWatchlist}
                 focusedTitle={focusedTitle}
+                ownerPage={ownerPage}
             />
             <VirtualContentSection
                 ref={section1Ref}
@@ -247,6 +253,7 @@ export const ContentGrid = React.memo(
                 onRemoveContent={onRemoveContent}
                 fromWatchlist={fromWatchlist}
                 focusedTitle={focusedTitle}
+                ownerPage={ownerPage}
             />
             <VirtualContentSection
                 ref={section2Ref}
@@ -258,6 +265,7 @@ export const ContentGrid = React.memo(
                 onRemoveContent={onRemoveContent}
                 fromWatchlist={fromWatchlist}
                 focusedTitle={focusedTitle}
+                ownerPage={ownerPage}
             />
         </div>
     );

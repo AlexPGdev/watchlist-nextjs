@@ -1,12 +1,14 @@
 "use client";
 
 import { Header } from "@/app/components/Header";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from 'js-cookie'
 import { ContentCard } from "@/app/components/ContentCard";
 import settings from "@/app/constants/settings.json";
 import { FaInfoCircle } from "react-icons/fa";
+import { ContentDetailsModal } from "@/app/components/modals/ContentDetailsModal";
+import { Content } from "@/app/types/content";
 
 export default function Page() {
     const router = useRouter();
@@ -43,6 +45,19 @@ export default function Page() {
         router.push(`?${result.mediaType.toLowerCase()}=${result.id}`, { scroll: false })
         setSelectedContent(result)
         setShowModal(true)
+    }, []);
+
+    const handleContentClick = useCallback((content: Content) => {
+        let scrollY = window.scrollY
+    
+        router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+        setSelectedContent(content)
+        setShowModal(true)
+    
+        setTimeout(() => {
+            window.scrollTo(0, scrollY)
+            scrollY = 0
+        }, 300)
     }, []);
 
     return (
@@ -92,10 +107,14 @@ export default function Page() {
                             </>
                         )}
 
-                        <ContentCard content={content.movie ? content.movie : content} onClick={() => { }} onStatusChange={() => {}} onRemoveContent={() => {}} fromWatchlist={false} focusedTitle={''} />
+                        <ContentCard content={content.movie ? content.movie : content} onClick={handleContentClick} onStatusChange={() => {}} onRemoveContent={() => {}} fromWatchlist={false} focusedTitle={''}  ownerPage={false}/>
                     </li>
                 ))}
             </ul>
+
+            <Suspense fallback={null}>
+                <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+            </Suspense>
 
         </div>
     )

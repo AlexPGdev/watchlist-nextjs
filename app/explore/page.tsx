@@ -20,7 +20,7 @@ export default function Page() {
   const router = useRouter();
 
   const { user, isLoggedIn } = useAuth();
-  const { content } = useContent();
+  const { page } = useContent();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
@@ -29,7 +29,7 @@ export default function Page() {
 
   useEffect(() => {
     loadRecommendedMovies()
-  }, [content, isLoggedIn])
+  }, [page.pageContentDTOS, isLoggedIn])
 
   const handleContentClick = useCallback((content: Content) => {
     router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })

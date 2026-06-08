@@ -11,10 +11,8 @@ interface AuthContextType {
   logout: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
 export function useAuth() {
-  const [user, setUser] = useState<string | null>(null)
+  const [user, setUser] = useState<{ id: number; username: string; roles: string[]; createdAt: number; } | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
@@ -34,7 +32,7 @@ export function useAuth() {
 
       if (response.ok) {
         const data = await response.json()
-        setUser(data.username)
+        setUser(data)
         setIsLoggedIn(true)
       } else {
         setIsLoggedIn(false)
@@ -61,7 +59,7 @@ export function useAuth() {
     }
 
     const data = await response.json()
-    setUser(data.username)
+    setUser(data)
     setIsLoggedIn(true)
     Cookies.set('rememberMeToken', data.rememberMeToken, { expires: 365 })
     window.location.reload()

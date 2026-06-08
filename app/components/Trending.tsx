@@ -9,6 +9,7 @@ import { IoIosExpand } from "react-icons/io";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { useContent } from "../hooks/useContent";
 
 interface TrendingProps {
     item: { title: string; subtitle: string; objects: any[] };
@@ -16,6 +17,10 @@ interface TrendingProps {
 }
 
 export const Trending = React.memo(function Trending({ item, onContentClick }: TrendingProps) {
+    const { page } = useContent();
+    const [activeIndex, setActiveIndex] = useState(0);
+    const isLastSlideActive = item?.objects?.length ? activeIndex === item.objects.length - 1 : false;
+
     return (
         <div className="flex flex-col select-none gap-2 ">
             <div>
@@ -42,7 +47,8 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
                     pagination={{
                         clickable: true,
                     }}
-                    className="w-full rounded-2xl lg:[mask-image:linear-gradient(to_right,black_90%,transparent)]"
+                    onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+                    className={`w-full rounded-2xl ${!isLastSlideActive ? 'lg:[mask-image:linear-gradient(to_right,black_90%,transparent)]' : ''}`}
                 >
                     {item?.objects.map((item, index) => (
                         <SwiperSlide
@@ -51,6 +57,7 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
                             style={{ width: '500px', position: 'relative', overflow: 'hidden' }}
                         >
                             <div className="relative w-full aspect-[1.778]" onClick={() => onContentClick && onContentClick(item)}>
+
                                 {item?.backdrops && item?.backdrops[0] ? (
                                     <img src={`https://image.tmdb.org/t/p/original/${item?.backdrops[0]?.file_path}`} className="w-full h-full transition-all group-hover:brightness-50" style={{ objectFit: 'cover' }} />
                                 ) : (
@@ -64,6 +71,20 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
                                 </div>
 
                                 <div className="absolute flex rounded-tr-2xl bottom-0 left-0 gap-3 bg-gradient-to-t from-black/80 to-transparent" style={{ height: '100%', width: '100%' }} draggable={false}>
+                                    
+                                    {(() => {
+                                        const itemInWatchlist = page.pageContentDTOS.find(c => c.tmdbId === item.tmdbId)
+                                        if(!itemInWatchlist) return null
+
+                                        return (
+                                            <div className="absolute top-0 right-0 p-1 px-2 bg-cyan-800/80 rounded-l-lg group-hover:brightness-50 transition-all">
+                                                <p className="text-sm font-semibold flex items-center justify-center h-full" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
+                                                    {itemInWatchlist.watched ? `Watched ${new Date(itemInWatchlist.watched ? itemInWatchlist.watchDate : (itemInWatchlist.started && !itemInWatchlist.watched) ? itemInWatchlist.startedDate : 0).toLocaleDateString('en-GB')}` : "In your watchlist"}
+                                                </p>
+                                            </div>
+                                        )
+                                    })()}
+
                                     <img
                                         src={`https://image.tmdb.org/t/p/original/${item.posterPath}`}
                                         className="object-cover rounded-2xl w-full h-full mt-auto group-hover:brightness-50 transition-all mb-4 ml-4"

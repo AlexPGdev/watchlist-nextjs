@@ -60,13 +60,17 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                                 }
                             }}
                             onScroll={() => updateScrollState(item.cacheKey)}
-                            className="relative flex gap-2 [mask-image:linear-gradient(to_right,black_90%,transparent)] py-2 overflow-x-scroll no-scrollbar overflow-y-visible"
+                            className="relative h-full flex gap-2 [mask-image:linear-gradient(to_right,black_90%,transparent)] py-2 overflow-x-scroll no-scrollbar overflow-y-visible"
                         >
                             {item.objects.map((object: any) => (
                                 <div key={object.movie ? object.movie.id : object.id} className="shrink-0 w-[180px]">
-                                    <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} focusedTitle={''} />
+                                    <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} focusedTitle={''} ownerPage={false} />
                                 </div>
                             ))}
+
+                            <a href={`/explore/${item.cacheKey}`} className="shrink-0 w-[180px] h-full rounded-2xl bg-cyan-800/30 flex flex-col justify-center items-center mr-6 cursor-pointer select-none hover:scale-105 active:scale-100 transition-all">
+                                <p>View more</p>
+                            </a>
                         </div>
 
 

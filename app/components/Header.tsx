@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import SvgComponent from "../components/HomeIcon";
 import settings from "../constants/settings.json";
 import { useAuth } from "../hooks/useAuth";
-
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
     onOpen: () => void;
@@ -12,6 +12,8 @@ interface HeaderProps {
 }
 
 export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }: HeaderProps) {
+
+    const router = useRouter();
 
     const { isLoggedIn, user, logout } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -143,14 +145,14 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                                 searchResults.map((result: any) => (
                                     <button 
                                         key={result.id}
-                                        onClick={() => {onOpenSearchResult(result)}}
+                                        onClick={() => {result.username ? router.push(`/user/${result.username}/watchlist`, { scroll: false }) : onOpenSearchResult(result)}}
                                         className="w-full rounded-3xl mb-2 border border-cyan-800/70 bg-[#081029] px-4 py-3 text-left cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-500 hover:bg-cyan-950/90"
                                         style={{ boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)' }}
                                     >
                                         <div className="flex gap-2 w-full h-20 items-center">
                                             <div className="w-15">
                                                 <img
-                                                    src={result.mediaType.toLowerCase() === "person" ? `https://image.tmdb.org/t/p/w500/${result.profile_path}` : result.poster_path === undefined ? `https://alexpgdev.com/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
+                                                    src={result?.mediaType?.toLowerCase() === "person" ? `https://image.tmdb.org/t/p/w500/${result.profile_path}` : result.poster_path === undefined ? `https://alexpgdev.com/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
                                                     className="w-full h-full object-cover rounded-lg" 
                                                     alt={result.title}
                                                     draggable={false}
@@ -198,7 +200,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                             className="inline-flex items-center gap-2 font-bold text-base p-1 rounded-2xl cursor-pointer hover:bg-cyan-800 transition-all"
                             style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}
                         >
-                            {user}
+                            {user?.username}
                         </button>
 
                         {menuOpen && (

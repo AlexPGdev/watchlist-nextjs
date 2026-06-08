@@ -14,17 +14,27 @@ import { LoginModal } from "@/components/modals/LoginModal";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Home() {
-  const { 
-    page, 
+export default function Page() {
+  const {
+    userPage,
     stats,
+    addContent,
     toggleWatched,
     removeContent,
+    loadContent
   } = useContent();
 
-  const router = useRouter();
+  const {
+    isLoggedIn,
+    user
+  } = useAuth();
 
-  const [filteredContent, setFilteredContent] = useState<Content[]>(page.pageContentDTOS);
+  const router = useRouter();
+  const params = useParams();
+
+  const username = params.user as string;
+
+  const [filteredContent, setFilteredContent] = useState<Content[]>(userPage.pageContentDTOS);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
@@ -41,9 +51,28 @@ export default function Home() {
   const [showRecentWatched, setShowRecentWatched] = useState(false)
   const [quickViewRemainingMs, setQuickViewRemainingMs] = useState(0)
 
+  const [ownerPage, setOwnerPage] = useState(false)
+
   useEffect(() => {
-    setFilteredContent(page.pageContentDTOS)
-  }, [page])
+    setFilteredContent(userPage.pageContentDTOS)
+  }, [userPage])
+
+  useEffect(() => {
+    if(!username || username === null) return;
+
+    console.log("Loading content for user:", username)
+    loadContent()
+  }, [username])
+
+  useEffect(() => {
+    if(!isLoggedIn || !userPage || !user) return;
+
+    if(`${user.username}`.toLowerCase() === `${userPage.ownerName}`.toLowerCase()) {
+      setOwnerPage(true)
+    } else {
+      setOwnerPage(false)
+    }
+  }, [isLoggedIn, user, userPage])
 
   useEffect(() => {
     let debounceTimeout = setTimeout(() => {
@@ -80,9 +109,9 @@ export default function Home() {
   }, [searchResults, currentScrollIndex]);
 
   useEffect(() => {
-    if(!page.pageContentDTOS || page.pageContentDTOS.length === 0) return
+    if(!userPage.pageContentDTOS || userPage.pageContentDTOS.length === 0) return
     
-    setFilteredContent(page.pageContentDTOS.filter((c) => {
+    setFilteredContent(userPage.pageContentDTOS.filter((c) => {
       let matches = true
 
       if (selectedFilters.year && selectedFilters.year.length > 0) {
@@ -95,14 +124,14 @@ export default function Home() {
 
       return matches
     }))
-  }, [page.pageContentDTOS, selectedFilters])
+  }, [userPage.pageContentDTOS, selectedFilters])
   
   const recentWatched = useMemo(() => {
-    if(!page.pageContentDTOS || page.pageContentDTOS.length === 0) return null
-    const watchedItems = page.pageContentDTOS.filter((c) => c.watched && c.watchDate)
+    if(!userPage.pageContentDTOS || userPage.pageContentDTOS.length === 0) return null
+    const watchedItems = userPage.pageContentDTOS.filter((c) => c.watched && c.watchDate)
     if (watchedItems.length === 0) return null
     return watchedItems.reduce((a, b) => (a.watchDate > b.watchDate ? a : b))
-  }, [page.pageContentDTOS])
+  }, [userPage.pageContentDTOS])
 
   const quickViewDurationMs = useMemo(() => {
     if (!recentWatched) return 0
@@ -154,7 +183,7 @@ export default function Home() {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [page.pageContentDTOS, recentWatched, quickViewDurationMs])
+  }, [userPage.pageContentDTOS, recentWatched, quickViewDurationMs])
   
 
   const contentGridRef = useRef<ContentGridHandle>(null);
@@ -166,6 +195,8 @@ export default function Home() {
   };
 
   const handleContentClick = useCallback((content: Content) => {
+    console.log(`Content clicked: ${content.title}`)
+
     let scrollY = window.scrollY
 
     router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
@@ -173,6 +204,7 @@ export default function Home() {
     setShowModal(true)
 
     setTimeout(() => {
+      console.log("Scrolling to:", scrollY)
       window.scrollTo(0, scrollY)
       scrollY = 0
     }, 300)
@@ -198,7 +230,7 @@ export default function Home() {
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
-        <h1 className="text-3xl font-bold">Watchlist</h1>
+        <h1 className="text-3xl font-bold">{!ownerPage ? `${userPage.ownerName}'s` : ""} Watchlist</h1>
         
         {showRecentWatched ? (
           <button className="flex flex-col gap-2 p-2 text-start rounded-2xl bg-cyan-800/40 hover:bg-cyan-700/60 transition-all select-none cursor-pointer" onClick={handleContentClick.bind(null, recentWatched as Content)}>
@@ -234,7 +266,7 @@ export default function Home() {
           </button>
         ) : null}
 
-        <FilterTab content={page.pageContentDTOS} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
+        <FilterTab content={userPage.pageContentDTOS} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
 
         <LayoutGroup>
           <ContentGrid
@@ -245,13 +277,14 @@ export default function Home() {
             onRemoveContent={handleRemoveContent}
             fromWatchlist={true}
             focusedTitle={focusedTitle}
-            ownerPage={true}
+            ownerPage={ownerPage}
           />
         </LayoutGroup>
 
         <Suspense fallback={null}>
           <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
         </Suspense>
+
         
         <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 

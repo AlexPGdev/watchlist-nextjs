@@ -17,7 +17,9 @@ const MAX_LOGO_HEIGHT = 100;
 
 export const ContentView = memo(function ContentView({ info, onClose, onClick }: ContentViewProps) {
 
-    const { addContent, content } = useContent();
+    const { addContent, page } = useContent();
+
+    console.log({page})
 
     const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -429,7 +431,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                         })()}
                                     </div>
 
-                                    <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
+                                    <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl select-none pointer-events-none" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
                                 </div>
                             </div>
                         </div>
@@ -555,13 +557,13 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
                     style={{ color: `rgba(${settings.primaryColor}, 1)` }}
                     onClick={() => handleAddWatchlist()}
-                    disabled={content.find(c => c.tmdbId === selectedContent?.id) ? true : false}
+                    disabled={(page.title === "not logged in" || page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id)) ? true : false}
                 >
                     <span className="inline-block content-center text-center transition-transform duration-300 ">
-                        {content.find(c => c.tmdbId === selectedContent?.id) ? <BiCheck size={20} /> : <BiPlus size={20} />}
+                        {page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id) ? <BiCheck size={20} /> : <BiPlus size={20} />}
                     </span>
                     <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
-                        {content.find(c => c.tmdbId === selectedContent?.id) ? "In your watchlist" : "Add to watchlist"}
+                        {page.title === "not logged in" ? `Login to add to your watchlist` : page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id) ? "In your watchlist" : "Add to watchlist"}
                     </span>
                 </button>
             </div>

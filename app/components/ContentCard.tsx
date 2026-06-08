@@ -17,9 +17,10 @@ interface ContentCardProps {
     onRemoveContent?: (id: number) => void;
     fromWatchlist?: boolean;
     focusedTitle: string;
+    ownerPage: boolean;
 }
 
-export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist, focusedTitle }: ContentCardProps) {
+export const ContentCard = React.memo(function ContentCard({ content, onClick, onStatusChange, onRemoveContent, fromWatchlist, focusedTitle, ownerPage }: ContentCardProps) {
     const [isButtonActive, setIsButtonActive] = React.useState(false);
     const isMobile = useIsMobile();
 
@@ -35,6 +36,8 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     const handlePointerUp = () => {
         setIsButtonActive(false);
     };
+
+    // console.log(ownerPage)
 
     const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -106,7 +109,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                         </div>
                     </div>
                     
-                    {fromWatchlist && (
+                    {(fromWatchlist && ownerPage) && (
                         <div className="flex justify-between gap-2">
                             <button className="p-1.5 px-3 flex-1 uppercase rounded-xl bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 active:scale-95 transition-all" style={{color: `rgba(${settings.primaryColor}, 1)`}} onClick={(e) => { e.stopPropagation(); onStatusChange && onStatusChange(content.id); }} onPointerDown={handleButtonPointerDown}>
                                 {content.watched ? (

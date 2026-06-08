@@ -4,30 +4,43 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { Content } from "../types/content";
 import Cookies from 'js-cookie'
 import { useAuth } from "./useAuth";
+import { useParams } from "next/navigation";
 
 interface ContentContextType {
-  content: Content[]
-  stats: {
-      total: number
-      watched: number
-      toWatch: number
-      dailyStreak: number
-  }
-  currentFilter: string
-  searchQuery: string
-  setSearchQuery: (q: string) => void
-  setCurrentFilter: (f: string) => void
-  loadContent: () => Promise<void>
-  setContent: React.Dispatch<React.SetStateAction<Content[]>>
-  loading: boolean,
-  addContent: (tmdbId: number, mediaType: string, logged: boolean) => Promise<Content>
-  removeContent: (id: number) => Promise<void>
-  toggleWatched: (id: number) => Promise<void>
-  addToFavorites: (id: number) => Promise<Content>
-  filterContentType: (index: number) => void
-  filterType: number
-  loadRecommendedMovies: () => Promise<void>
-  recommendations: { title: string; subtitle: string; objects: any[] }[]
+    page: {
+        title: string;
+        description: string;
+        ownerName: string;
+        id: number;
+        pageContentDTOS: Content[];
+    }
+    userPage: {
+        title: string;
+        description: string;
+        ownerName: string;
+        id: number;
+        pageContentDTOS: Content[];
+    }
+    stats: {
+        total: number
+        watched: number
+        toWatch: number
+        dailyStreak: number
+    }
+    currentFilter: string
+    searchQuery: string
+    setSearchQuery: (q: string) => void
+    setCurrentFilter: (f: string) => void
+    loadContent: () => Promise<void>
+    loading: boolean,
+    addContent: (tmdbId: number, mediaType: string, logged: boolean) => Promise<Content>
+    removeContent: (id: number) => Promise<void>
+    toggleWatched: (id: number) => Promise<void>
+    addToFavorites: (id: number) => Promise<Content>
+    filterContentType: (index: number) => void
+    filterType: number
+    loadRecommendedMovies: () => Promise<void>
+    recommendations: { title: string; subtitle: string; objects: any[] }[]
 }
 
 function useDailyStreak(content: Content[]) {
@@ -69,55 +82,105 @@ function useDailyStreak(content: Content[]) {
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider = memo(function ContentProvider({ children }: { children: React.ReactNode }) {
-    const [content, setContent] = React.useState<Content[]>([]);
+    const [page, setPage] = React.useState<{ title: string; description: string; ownerName: string; id: number; pageContentDTOS: Content[] }>({ title: "not logged in", description: "", ownerName: "", id: 0, pageContentDTOS: [] });
+    const [userPage, setUserPage] = React.useState<{ title: string; description: string; ownerName: string; id: number; pageContentDTOS: Content[] }>({ title: "", description: "", ownerName: "", id: 0, pageContentDTOS: [] });
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState(null);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [currentFilter, setCurrentFilter] = React.useState('toWatch');
     const [filterType, setFilterType] = React.useState(0);
 
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
 
-    const dailyStreak = useDailyStreak(content);
+    const params = useParams();
+
+    const username = params.user as string;
+
+    const dailyStreak = useDailyStreak(username ? userPage.pageContentDTOS : page.pageContentDTOS);
 
     const [recommendations, setRecommendations] = useState<{ title: string; subtitle: string; objects: any[] }[]>([]);
 
     const stats = useMemo(
         () => ({
-            total: (content && content.length > 0) ? content.length : 0,
-            watched: (content && content.length > 0) ? content.filter((c) => c.watched).length : 0,
-            toWatch: (content && content.length > 0) ? content.filter((c) => !c.watched).length : 0,
-            dailyStreak: (content && content.length > 0) ? dailyStreak : 0,
+            total: (username ? userPage.pageContentDTOS : page.pageContentDTOS).length > 0 ? (username ? userPage.pageContentDTOS : page.pageContentDTOS).length : 0,
+            watched: (username ? userPage.pageContentDTOS : page.pageContentDTOS).length > 0 ? (username ? userPage.pageContentDTOS : page.pageContentDTOS).filter((c) => c.watched).length : 0,
+            toWatch: (username ? userPage.pageContentDTOS : page.pageContentDTOS).length > 0 ? (username ? userPage.pageContentDTOS : page.pageContentDTOS).filter((c) => !c.watched).length : 0,
+            dailyStreak: (username ? userPage.pageContentDTOS : page.pageContentDTOS).length > 0 ? dailyStreak : 0,
         }),
-        [content, dailyStreak]
+        [userPage.pageContentDTOS, page.pageContentDTOS, dailyStreak]
     );
 
     useEffect(() => {
-        loadContent();
-    }, []);
+
+        if(username) {
+            setLoading(true);
+            fetch(`https://api.spectaer.com/watchlist/api/page/username/${username}`, {
+                "method": "GET",
+                "headers": {
+                    "Content-Type": "application/json",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                setUserPage(data)
+
+                setError(null);
+            })
+            .finally(() => {
+                setLoading(false)
+            });
+        }
+        
+        if(isLoggedIn && user !== null) {
+            if(!username){
+                setLoading(true);
+            }
+
+            fetch(`https://api.spectaer.com/watchlist/api/page`, {
+                "method": "GET",
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                setPage(data)
+
+                setError(null);
+            })
+            .finally(() => {
+                if(!username) {
+                    setLoading(false)
+                }
+            });
+            
+        }
+    }, [isLoggedIn, user]);
 
     const loadContent = useCallback(async () => {
-        setLoading(true);
-        fetch(`https://api.spectaer.com/watchlist/api/page`, {
-            "method": "GET",
-            "headers": {
-                "Content-Type": "application/json",
-                "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            setContent(data.pageContentDTOS)
-
-            setError(null);
-        })
-        .finally(() => {
-            setLoading(false)
-        });
-    }, [])
+        if(isLoggedIn && user) {
+            setLoading(true);
+            fetch(username ? `https://api.spectaer.com/watchlist/api/page/username/${username}` : `https://api.spectaer.com/watchlist/api/page`, {
+                "method": "GET",
+                "headers": {
+                    "Content-Type": "application/json",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                setUserPage(data)
+                
+                setError(null);
+            })
+            .finally(() => {
+                setLoading(false)
+            });
+        }
+    }, [username])
 
     const loadRecommendedMovies = useCallback(async () => {
-        if (content.length === 0) return;
+        if (!page.pageContentDTOS || page.pageContentDTOS.length === 0) return;
 
         try {
             // Fetch recommendations
@@ -177,22 +240,22 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         } catch (err) {
             console.error("Error loading recommendations:", err);
         }
-    }, [content, isLoggedIn]);
+    }, [page.pageContentDTOS, isLoggedIn]);
 
-    const filterAndSearchContent = useCallback(() => {
-        if(content && content.length > 0) {
-            let filtered = [...content];
+    // const filterAndSearchContent = useCallback(() => {
+    //     if(content && content.length > 0) {
+    //         let filtered = [...content];
             
-            if (searchQuery) {
-                filtered = filtered.filter(content => 
-                    content.title.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-            };
-            setContent(filtered);
-        } else {
-            setContent([]);
-        }
-    }, [content, searchQuery])
+    //         if (searchQuery) {
+    //             filtered = filtered.filter(content => 
+    //                 content.title.toLowerCase().includes(searchQuery.toLowerCase())
+    //             );
+    //         };
+    //         setContent(filtered);
+    //     } else {
+    //         setContent([]);
+    //     }
+    // }, [content, searchQuery])
 
     const addContent = async (tmdbId: number, mediaType: string, logged: boolean) => {
         try {
@@ -208,7 +271,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             if (!response.ok) {
                 if (response.status === 409) {
                     const error = new Error("duplicate") as any
-                    error.content = content
+                    error.content = page.pageContentDTOS
                     throw error
                 }
                 throw new Error("Failed to add content")
@@ -233,7 +296,10 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
             // loadContent()
 
-            setContent(prev => [...prev, addedContent])
+            setPage(prev => ({
+                ...prev,
+                pageContentDTOS: [...prev.pageContentDTOS, addedContent]
+            }));
 
             // loadExternalRatings(addedContent.tmdbId, addedContent.title, mediaType, addedContent.id, onRatingsUpdated)
 
@@ -251,8 +317,11 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     }
 
     const removeContent = useCallback(async (id: number) => {
-        setContent(prev => prev.filter(m => m.id !== id));
-        
+        setPage(prev => ({
+            ...prev,
+            pageContentDTOS: prev.pageContentDTOS.filter(m => m.id !== id)
+        }));
+
         fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}`, {
             method: "DELETE",
             headers: {
@@ -265,8 +334,8 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const toggleWatched = useCallback(async (id: number) => {
         let type: "started" | "watched" | undefined;
 
-        setContent(prev => {
-            const contentToToggle = prev.find(c => c.id === id);
+        setPage(prev => {
+            const contentToToggle = prev.pageContentDTOS.find(c => c.id === id);
             if (!contentToToggle) return prev;
 
             type = (() => {
@@ -279,9 +348,9 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
             if (!type) return prev;
 
-            const index = prev.findIndex(m => m.id === id);
+            const index = prev.pageContentDTOS.findIndex(m => m.id === id);
             if (index === -1) return prev;
-            const updated = [...prev];
+            const updated = [...prev.pageContentDTOS];
             if (type === "started") {
                 const nowStarted = !updated[index].started;
                 updated[index] = { ...updated[index], started: nowStarted, startedDate: nowStarted ? Date.now() : 0, toggled: true };
@@ -296,7 +365,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                     toggled: true 
                 };
             }
-            return updated;
+            return { ...prev, pageContentDTOS: updated };
         });
 
         if (type) {
@@ -332,21 +401,30 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const filterContentType = (index: number) => {
         setFilterType(index)
         if(index === 0){
-            setContent([...content.filter(m => m.contentType === "movie" || m.contentType === "tv_series")])
+            setPage(prev => ({
+                ...prev,
+                pageContentDTOS: prev.pageContentDTOS.filter(m => m.contentType === "movie" || m.contentType === "tv_series")
+            }))
         } else if(index === 1){
-            setContent([...content.filter(m => m.contentType === "movie")])
+            setPage(prev => ({
+                ...prev,
+                pageContentDTOS: prev.pageContentDTOS.filter(m => m.contentType === "movie")
+            }))
         } else if(index === 2){
-            setContent([...content.filter(m => m.contentType === "tv_series")])
+            setPage(prev => ({
+                ...prev,
+                pageContentDTOS: prev.pageContentDTOS.filter(m => m.contentType === "tv_series")
+            }))
         }
     }
 
     const addToFavorites = async (id: number) => {
-        setContent(prev => {
-            const index = prev.findIndex(m => m.id === id);
+        setPage(prev => {
+            const index = prev.pageContentDTOS.findIndex(m => m.id === id);
             if (index === -1) return prev;
-            const updated = [...prev];
+            const updated = [...prev.pageContentDTOS];
             updated[index] = { ...updated[index], favorite: updated[index].favorite > 0 ? 0 : 1 };
-            return updated;        
+            return { ...prev, pageContentDTOS: updated };
         });
 
         try {
@@ -362,7 +440,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             if (!response.ok) {
                 if (response.status === 409) {
                     const error = new Error("duplicate") as any
-                    error.content = content
+                    error.content = page.pageContentDTOS
                     throw error
                 }
                 throw new Error("Failed to add content")
@@ -384,14 +462,14 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     }
 
     const value = useMemo<ContentContextType>(() => ({
-        content,
+        page,
+        userPage,
         stats,
         currentFilter,
         searchQuery,
         setSearchQuery,
         setCurrentFilter,
         loadContent,
-        setContent,
         loading,
         addContent,
         removeContent,
@@ -403,14 +481,14 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         loadRecommendedMovies,
         recommendations
     }), [
-        content,
+        page,
+        userPage,
         stats,
         currentFilter,
         searchQuery,
         setSearchQuery,
         setCurrentFilter,
         loadContent,
-        setContent,
         loading,
         addContent,
         removeContent,
