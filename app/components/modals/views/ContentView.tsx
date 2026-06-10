@@ -6,6 +6,8 @@ import { BiCheck, BiPlus, BiX } from "react-icons/bi";
 import { Content } from "../../../types/content";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
+import Cookies from 'js-cookie';
+import { useAuth } from "@/app/hooks/useAuth";
 
 interface ContentViewProps {
     info: { id: string, type: string };
@@ -16,10 +18,9 @@ interface ContentViewProps {
 const MAX_LOGO_HEIGHT = 100;
 
 export const ContentView = memo(function ContentView({ info, onClose, onClick }: ContentViewProps) {
+    const { user } = useAuth();
 
-    const { addContent, page } = useContent();
-
-    console.log({page})
+    const { addContent } = useContent();
 
     const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -35,6 +36,9 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     const [showRipple, setShowRipple] = useState(false);
     const [rippleKey, setRippleKey] = useState(0);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+
+    const [inWatchlist, setInWatchlist] = useState(false);
+
     const buttonRef = useRef < HTMLButtonElement | null > (null);
     const modalRef = useRef < HTMLDivElement | null > (null);
 
@@ -43,44 +47,53 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     useEffect(() => {
         if (!info.id || !info.type) return;
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${info.id}&type=${info.type}`, {
-            "method": "GET"
+        fetch(`http://192.168.178.131:8080/api/content/extended-details?id=${info.id}&type=${info.type}`, {
+            "method": "GET",
+            "headers": {
+                "Content-Type": "application/json",
+                "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+            }
+
         })
             .then(function (response) {
                 return response.json();
             })
             .then(function (data) {
 
-                const certification = data.release_dates?.results
+                let details = data.details;
+
+                setInWatchlist(data.inWatchlist);
+
+                const certification = details.release_dates?.results
                     ?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")
                     ?.release_dates
                     ?.find((rd: { certification: string }) => rd.certification?.trim())
                     ?.certification ||
-                    data.content_ratings?.results?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")?.rating
+                    details.content_ratings?.results?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")?.rating
 
                 setSelectedContent({
-                    id: data.id,
-                    posterPath: data.images.posters[0]?.file_path,
-                    logoPath: data.images.logos[0]?.file_path,
-                    logoAspectRatio: data.images.logos[0]?.aspect_ratio,
-                    description: data.overview,
-                    releaseDate: data.release_date,
-                    firstAirDate: data.first_air_date,
-                    lastAirDate: data.last_air_date,
-                    totalSeasons: data.seasons?.length,
-                    trailerPath: data.videos?.results[0]?.key,
+                    id: details.id,
+                    posterPath: details.images.posters[0]?.file_path,
+                    logoPath: details.images.logos[0]?.file_path,
+                    logoAspectRatio: details.images.logos[0]?.aspect_ratio,
+                    description: details.overview,
+                    releaseDate: details.release_date,
+                    firstAirDate: details.first_air_date,
+                    lastAirDate: details.last_air_date,
+                    totalSeasons: details.seasons?.length,
+                    trailerPath: details.videos?.results[0]?.key,
                     certification: certification,
-                    runtime: data.runtime,
-                    genres: data.genres?.map((g: { name: string }) => g.name) || [],
+                    runtime: details.runtime,
+                    genres: details.genres?.map((g: { name: string }) => g.name) || [],
                 })
 
-                setImages(data.images)
-                loadStreamingAvailability(data)
-                setCast(data.credits.cast)
-                setCrew(data.credits.crew)
-                setCreators(data.created_by)
-                setProductionCompanies(data.production_companies)
-                setAlsoWatch(data.recommendations.results)
+                setImages(details.images)
+                loadStreamingAvailability(details)
+                setCast(details.credits.cast)
+                setCrew(details.credits.crew)
+                setCreators(details.created_by)
+                setProductionCompanies(details.production_companies)
+                setAlsoWatch(details.recommendations.results)
             })
     }, [info.id, info.type])
 
@@ -121,7 +134,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     async function loadStreamingAvailability(newContent: any) {
         try {
             const response1 = await fetch(
-                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id
+                `http://192.168.178.131:8080/api/content/streaming-availability?id=${newContent?.id
                 }&type=${`${(info.type)}`.toLowerCase()}`
             );
 
@@ -197,6 +210,8 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
 
     const handleAddWatchlist = () => {
         if (!selectedContent) return;
+
+        setInWatchlist(true)
 
         addContent(selectedContent?.id, info.type, false)
 
@@ -557,13 +572,13 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
                     style={{ color: `rgba(${settings.primaryColor}, 1)` }}
                     onClick={() => handleAddWatchlist()}
-                    disabled={(page.title === "not logged in" || page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id)) ? true : false}
+                    disabled={(user === null || inWatchlist) ? true : false}
                 >
                     <span className="inline-block content-center text-center transition-transform duration-300 ">
-                        {page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id) ? <BiCheck size={20} /> : <BiPlus size={20} />}
+                        {inWatchlist ? <BiCheck size={20} /> : <BiPlus size={20} />}
                     </span>
                     <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
-                        {page.title === "not logged in" ? `Login to add to your watchlist` : page.pageContentDTOS.find(c => c.tmdbId === selectedContent?.id) ? "In your watchlist" : "Add to watchlist"}
+                        {user === null ? `Login to add to your watchlist` : inWatchlist ? "In your watchlist" : "Add to watchlist"}
                     </span>
                 </button>
             </div>

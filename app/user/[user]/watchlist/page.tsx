@@ -11,7 +11,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { Content } from "@/types/content";
 import { LayoutGroup } from "motion/react";
 import { LoginModal } from "@/components/modals/LoginModal";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Page() {
@@ -52,6 +52,15 @@ export default function Page() {
   const [quickViewRemainingMs, setQuickViewRemainingMs] = useState(0)
 
   const [ownerPage, setOwnerPage] = useState(false)
+
+  const searchParams = useSearchParams();
+  const [type, id] = [...searchParams.entries()][0] || [];
+
+  useEffect(() => {
+    if(type && id) {
+      setShowModal(true)
+    }
+  }, [])
 
   useEffect(() => {
     setFilteredContent(userPage.pageContentDTOS)

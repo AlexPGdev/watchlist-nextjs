@@ -2,7 +2,7 @@
 
 import { Header } from "@/app/components/Header";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Cookies from 'js-cookie'
 import { ContentCard } from "@/app/components/ContentCard";
 import settings from "@/app/constants/settings.json";
@@ -24,19 +24,26 @@ export default function Page() {
 
     const [recommendedContent, setRecommendedContent] = useState<any>([]);
 
+    const searchParams = useSearchParams();
+    const [type, id] = [...searchParams.entries()][0] || [];
+
     useEffect(() => {
-            fetch(`https://api.spectaer.com/watchlist/api/page-content/recommended?section=${key}&page=0&size=100`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `RememberMe ${Cookies.get("rememberMeToken")}`,
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                setRecommendedContent(data[0])
-            })
-            .catch(err => console.error("Error loading recommended movies:", err));
+        if(type && id) {
+            setShowModal(true)
+        }
+
+        fetch(`http://192.168.178.131:8080/api/page-content/recommended?section=${key}&page=0&size=100`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `RememberMe ${Cookies.get("rememberMeToken")}`,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            setRecommendedContent(data[0])
+        })
+        .catch(err => console.error("Error loading recommended movies:", err));
 
 
     }, []);
@@ -65,12 +72,12 @@ export default function Page() {
             <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
 
             <div>
-                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{recommendedContent.title}</h1>
-                <p className="text-lg font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{recommendedContent.subtitle}</p>
+                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{recommendedContent?.title}</h1>
+                <p className="text-lg font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{recommendedContent?.subtitle}</p>
             </div>
 
             <ul className="grid gap-3 md:gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-                {recommendedContent.objects && recommendedContent.objects.map((content: any, index: number) => (
+                {recommendedContent?.objects && recommendedContent?.objects.map((content: any, index: number) => (
                     <li
                         key={content.movie ? content.movie.id : content.id}
                         className="relative content-card"

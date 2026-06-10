@@ -2,6 +2,7 @@
 
 import { useState, useEffect, createContext } from "react"
 import Cookies from 'js-cookie';
+import { useParams } from "next/navigation";
 
 interface AuthContextType {
   user: string | null
@@ -9,11 +10,17 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>
   signup: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  profile: any | null
+  getProfile: () => Promise<void>
 }
 
 export function useAuth() {
   const [user, setUser] = useState<{ id: number; username: string; roles: string[]; createdAt: number; } | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [profile, setProfile] = useState<any | null>(null)
+
+  const params = useParams();
+  const username = params.user as string;
 
   useEffect(() => {
     checkAuthStatus()
@@ -22,7 +29,7 @@ export function useAuth() {
   const checkAuthStatus = async () => {
     try {
       // console.log()
-      const response = await fetch("https://api.spectaer.com/watchlist/api/user", {
+      const response = await fetch("http://192.168.178.131:8080/api/user", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -45,8 +52,28 @@ export function useAuth() {
     }
   }
 
+  const getProfile = async () => {
+    try {
+      const response = await fetch(`http://192.168.178.131:8080/api/user/${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(data)
+      }
+
+    } catch (error) {
+      console.error("Error loading profile:", error)
+    }
+  }
+
   const login = async (username: string, password: string) => {
-    const response = await fetch("https://api.spectaer.com/watchlist/api/login", {
+    const response = await fetch("http://192.168.178.131:8080/api/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,7 +93,7 @@ export function useAuth() {
   }
 
   const signup = async (username: string, password: string) => {
-    const response = await fetch("https://api.spectaer.com/watchlist/api/signup", {
+    const response = await fetch("http://192.168.178.131:8080/api/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,7 +113,7 @@ export function useAuth() {
   }
 
   const logout = async () => {
-    await fetch("https://api.spectaer.com/watchlist/api/logout", {
+    await fetch("http://192.168.178.131:8080/api/logout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,6 +128,8 @@ export function useAuth() {
 
   return {
     user,
+    getProfile,
+    profile,
     isLoggedIn,
     login,
     signup,

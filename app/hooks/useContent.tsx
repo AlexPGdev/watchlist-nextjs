@@ -112,9 +112,11 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
     useEffect(() => {
 
+        if(window.location.pathname.includes("user") && !window.location.pathname.includes("watchlist")) return;
+
         if(username) {
             setLoading(true);
-            fetch(`https://api.spectaer.com/watchlist/api/page/username/${username}`, {
+            fetch(`http://192.168.178.131:8080/api/page/username/${username}`, {
                 "method": "GET",
                 "headers": {
                     "Content-Type": "application/json",
@@ -136,7 +138,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 setLoading(true);
             }
 
-            fetch(`https://api.spectaer.com/watchlist/api/page`, {
+            fetch(`http://192.168.178.131:8080/api/page`, {
                 "method": "GET",
                 "headers": {
                     "Content-Type": "application/json",
@@ -161,7 +163,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const loadContent = useCallback(async () => {
         if(isLoggedIn && user) {
             setLoading(true);
-            fetch(username ? `https://api.spectaer.com/watchlist/api/page/username/${username}` : `https://api.spectaer.com/watchlist/api/page`, {
+            fetch(username ? `http://192.168.178.131:8080/api/page/username/${username}` : `http://192.168.178.131:8080/api/page`, {
                 "method": "GET",
                 "headers": {
                     "Content-Type": "application/json",
@@ -180,12 +182,12 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     }, [username])
 
     const loadRecommendedMovies = useCallback(async () => {
-        if (!page.pageContentDTOS || page.pageContentDTOS.length === 0) return;
+        // if (!page.pageContentDTOS || page.pageContentDTOS.length === 0) return;
 
         try {
             // Fetch recommendations
             const res = await fetch(
-                `https://api.spectaer.com/watchlist/api/page-content/recommended?requestType=minimal`,
+                `http://192.168.178.131:8080/api/page-content/recommended?requestType=minimal`,
                 {
                 method: "GET",
                 headers: {
@@ -210,12 +212,12 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                     console.log({isMovie})
 
                     const backdropRes = await fetch(
-                        `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=${isMovie === true ? 'movie' : 'tv_series'}`
+                        `http://192.168.178.131:8080/api/content/extended-details?id=${item.tmdbId}&type=${isMovie === true ? 'movie' : 'tv_series'}`
                     );
                     const backdropData = await backdropRes.json();
                     return {
                     ...item,
-                    backdrops: backdropData.images?.backdrops || [],
+                    backdrops: backdropData.details.images?.backdrops || [],
                     };
                 } catch (err) {
                     console.error("Error fetching backdrops for", item.tmdbId, err);
@@ -259,7 +261,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
     const addContent = async (tmdbId: number, mediaType: string, logged: boolean) => {
         try {
-            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content?tmdbId=${tmdbId}&type=${mediaType}`, {
+            const response = await fetch(`http://192.168.178.131:8080/api/page-content?tmdbId=${tmdbId}&type=${mediaType}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -280,7 +282,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             const addedContent = await response.json()
 
             if(logged) {
-                const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${addedContent.id}/watch?logged=${logged}`, {
+                const response = await fetch(`http://192.168.178.131:8080/api/page-content/${addedContent.id}/watch?logged=${logged}`, {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
@@ -322,7 +324,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             pageContentDTOS: prev.pageContentDTOS.filter(m => m.id !== id)
         }));
 
-        fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}`, {
+        fetch(`http://192.168.178.131:8080/api/page-content/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
@@ -369,7 +371,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         });
 
         if (type) {
-            fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}/${type === "started" ? "start" : "watch"}`, {
+            fetch(`http://192.168.178.131:8080/api/page-content/${id}/${type === "started" ? "start" : "watch"}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -381,7 +383,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
     const loadExternalRatings = async (tmdbId: string, title: string, type: string, contentId: number, onRatingsUpdated?: (ratings: any) => void) => {
         try {
-            const response = await fetch(`https://api.spectaer.com/watchlist/api/content/${tmdbId}/ratings?title=${title}&type=${type}`, {
+            const response = await fetch(`http://192.168.178.131:8080/api/content/${tmdbId}/ratings?title=${title}&type=${type}`, {
                 credentials: "include",
                 method: "PATCH"
             })
@@ -428,7 +430,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         });
 
         try {
-            const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}/favorite`, {
+            const response = await fetch(`http://192.168.178.131:8080/api/page-content/${id}/favorite`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

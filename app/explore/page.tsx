@@ -11,7 +11,7 @@ import { Trending } from "../components/Trending";
 import { Recommendations } from "../components/Recommendations";
 import { ExploreRightSide } from "../components/ExploreRightSide";
 import { ContentDetailsModal } from "../components/modals/ContentDetailsModal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 
@@ -26,6 +26,15 @@ export default function Page() {
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
   const { loadRecommendedMovies, recommendations } = useContent();
+
+  const searchParams = useSearchParams();
+  const [type, id] = [...searchParams.entries()][0] || [];
+
+  useEffect(() => {
+    if(type && id) {
+      setShowModal(true)
+    }
+  }, [])
 
   useEffect(() => {
     loadRecommendedMovies()

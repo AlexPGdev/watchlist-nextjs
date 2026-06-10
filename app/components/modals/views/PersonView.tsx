@@ -25,7 +25,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose }: P
     useEffect(() => {
         if (!info.id || !info.type) return
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/person/${info.id}`, {
+        fetch(`http://192.168.178.131:8080/api/content/person/${info.id}`, {
             "method": "GET"
         })
             .then(function (response) {

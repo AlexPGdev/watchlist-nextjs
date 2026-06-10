@@ -46,7 +46,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
 
             const debounceTimeout = setTimeout(async () => {
                 try {
-                    const response = await fetch(`https://api.spectaer.com/watchlist/api/search?q=${encodeURIComponent(effectiveQuery.replace('@', ''))}`)
+                    const response = await fetch(`http://192.168.178.131:8080/api/search?q=${encodeURIComponent(effectiveQuery.replace('@', ''))}`)
                     const data = await response.json()
 
                     if (data.Error) {
@@ -73,7 +73,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
 
         const debounceTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`https://api.spectaer.com/watchlist/api/content/searchContent?query=${encodeURIComponent(effectiveQuery.trim())}${yearFilter ? `&year=${yearFilter}` : ''}`)
+                const response = await fetch(`http://192.168.178.131:8080/api/content/searchContent?query=${encodeURIComponent(effectiveQuery.trim())}${yearFilter ? `&year=${yearFilter}` : ''}`)
                 const data = await response.json()
 
                 if (data.Error) {
@@ -145,7 +145,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                                 searchResults.map((result: any) => (
                                     <button 
                                         key={result.id}
-                                        onClick={() => {result.username ? router.push(`/user/${result.username}/watchlist`, { scroll: false }) : onOpenSearchResult(result)}}
+                                        onClick={() => {result.username ? router.push(`/user/${result.username}`, { scroll: false }) : onOpenSearchResult(result)}}
                                         className="w-full rounded-3xl mb-2 border border-cyan-800/70 bg-[#081029] px-4 py-3 text-left cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-500 hover:bg-cyan-950/90"
                                         style={{ boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)' }}
                                     >
@@ -206,7 +206,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                         {menuOpen && (
                             <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50 overflow-hidden">
                                 <a
-                                    href="/profile"
+                                    href={`/user/${user?.username}`}
                                     className="block w-full px-4 py-3 text-left text-sm text-cyan-300 cursor-pointer hover:bg-cyan-900/80 transition-colors"
                                     onClick={() => setMenuOpen(false)}
                                 >
