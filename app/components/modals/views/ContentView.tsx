@@ -47,7 +47,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     useEffect(() => {
         if (!info.id || !info.type) return;
 
-        fetch(`http://192.168.178.131:8080/api/content/extended-details?id=${info.id}&type=${info.type}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${info.id}&type=${info.type}`, {
             "method": "GET",
             "headers": {
                 "Content-Type": "application/json",
@@ -134,7 +134,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     async function loadStreamingAvailability(newContent: any) {
         try {
             const response1 = await fetch(
-                `http://192.168.178.131:8080/api/content/streaming-availability?id=${newContent?.id
+                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id
                 }&type=${`${(info.type)}`.toLowerCase()}`
             );
 

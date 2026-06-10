@@ -32,7 +32,7 @@ export default function Page() {
             setShowModal(true)
         }
 
-        fetch(`http://192.168.178.131:8080/api/page-content/recommended?section=${key}&page=0&size=100`, {
+        fetch(`https://api.spectaer.com/watchlist/api/page-content/recommended?section=${key}&page=0&size=100`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

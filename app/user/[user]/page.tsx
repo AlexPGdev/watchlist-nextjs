@@ -2,19 +2,33 @@
 
 import { useAuth } from "@/app/hooks/useAuth";
 import { Header } from "@/components/Header";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import settings from "@/constants/settings.json";
 import { Stats } from "@/app/components/Stats";
 import { useContent } from "@/app/hooks/useContent";
 import { GoChevronRight } from "react-icons/go";
 import { ContentCard } from "@/app/components/ContentCard";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { ContentDetailsModal } from "@/app/components/modals/ContentDetailsModal";
+import { Content } from "@/app/types/content";
 
 export default function Page() {
     const { getProfile, profile } = useAuth();
+
+    const router = useRouter();
+
     const [stats, setStats] = useState<{ total: number; watched: number; toWatch: number; dailyStreak: number; }>({ total: 0, watched: 0, toWatch: 0, dailyStreak: 0 })
 
+    const [showModal, setShowModal] = useState(false);
+    const [selectedContent, setSelectedContent] = useState<any>(null);
+
+    const searchParams = useSearchParams();
+    const [type, id] = [...searchParams.entries()][0] || [];
+
     useEffect(() => {
+        if(type && id) {
+            setShowModal(true)
+        }
         getProfile()
     }, [])
 
@@ -29,10 +43,19 @@ export default function Page() {
         })
     }, [profile])
 
+    const handleContentClick = useCallback((content: Content) => {
+
+        let isMovie = content.runtime !== null || content.totalSeasons <= 0;
+        
+        console.log({content})
+        router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+        setSelectedContent(content)
+        setShowModal(true)
+    }, []);
+
     return (
         <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
             <Header onOpen={() => {}} onOpenSearchResult={() => {}} />
-            <Stats stats={stats} />
 
             <div className="flex flex-col gap-3 justify-center w-full items-center">
                 <img src={`https://alexpgdev.com/peepoHey.gif`} alt="user" className="w-30 h-30 rounded-full border-2 border-cyan-800" />
@@ -42,6 +65,8 @@ export default function Page() {
                     <p className="text-md font-semibold tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Joined on {new Date(profile?.createdAt || 0).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
             </div>
+            
+            <Stats stats={stats} />
 
             <div className="flex flex-col gap-2 w-fit ml-auto mr-auto">
                 {profile?.watchlist?.length > 0 && (
@@ -51,11 +76,11 @@ export default function Page() {
                             <GoChevronRight className="cursor-pointer text-cyan-500 group-hover:text-cyan-100 transition-all" size={30} />
                         </a>
 
-                        <div className="relative h-full flex gap-2 py-2 overflow-x-scroll no-scrollbar overflow-y-visible">
+                        <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-visible">
                             {profile?.watchlist?.map((content: any) => (
-                                <div key={content.id} className="max-w-[120px]">
+                                <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -67,11 +92,11 @@ export default function Page() {
                             <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Favorite Picks</h1>
                         </a>
 
-                        <div className="relative h-full flex gap-2 py-2 overflow-x-scroll no-scrollbar overflow-y-visible">
+                        <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-y-visible">
                             {profile?.favorites?.map((content: any) => (
-                                <div key={content.id} className="shrink-0 w-[120px]">
+                                <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -83,18 +108,20 @@ export default function Page() {
                             <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Recently Watched</h1>
                         </a>
 
-                        <div className="relative h-full flex gap-2 py-2 overflow-x-scroll no-scrollbar overflow-y-visible">
+                        <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-y-visible">
                             {profile?.recentlyWatched?.map((content: any) => (
-                                <div key={content.id} className="shrink-0 w-[120px]">
+                                <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
                 )}
-
-
             </div>
+
+            <Suspense fallback={null}>
+                <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
+            </Suspense>
         </div>
     );
 }
