@@ -8,6 +8,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
 import Cookies from 'js-cookie';
 import { useAuth } from "@/app/hooks/useAuth";
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 
 interface ContentViewProps {
     info: { id: string, type: string };
@@ -33,6 +35,22 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     const [creators, setCreators] = useState < any[] > ([]);
     const [productionCompanies, setProductionCompanies] = useState < any > (null);
     const [alsoWatch, setAlsoWatch] = useState < any > (null);
+
+    const [episodes, setEpisodes] = useState<any[]>([]);
+    const [isLoadingEpisodes, setIsLoadingEpisodes] = useState<number[]>([]);
+    const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+    const [selectedSeasonEpisodes, setSelectedSeasonEpisodes] = useState<any[]>([]);
+    const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+    const seasonDropdownRef = useRef<HTMLDivElement | null>(null);
+    const SKELETON_COUNT = 6;
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const [collection, setCollection] = useState < { name: string, poster_path: string, parts: any[] } | null > (null);
+    const [collectionScrollable, setCollectionScrollable] = useState(false);
+    const [castScrollable, setCastScrollable] = useState(false);
+    const collectionScrollRef = useRef<HTMLDivElement | null>(null);
+    const castScrollRef = useRef<HTMLDivElement | null>(null);
+
     const [showRipple, setShowRipple] = useState(false);
     const [rippleKey, setRippleKey] = useState(0);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
@@ -47,13 +65,28 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     useEffect(() => {
         if (!info.id || !info.type) return;
 
+        setSelectedContent(null)
+        setStreamingServices(null)
+        setAllServices(null)
+        setImages({ backdrops: [], posters: [] })
+        setCast(null)
+        setCrew(null)
+        setCreators([])
+        setProductionCompanies(null)
+        setAlsoWatch(null)
+        setCollection(null)
+        setCollectionScrollable(false)
+        setCastScrollable(false)
+        setShowMore(false)
+
+        modalRef.current?.scrollTo({ top: 0 });
+
         fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${info.id}&type=${info.type}`, {
             "method": "GET",
             "headers": {
                 "Content-Type": "application/json",
                 "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
             }
-
         })
             .then(function (response) {
                 return response.json();
@@ -80,7 +113,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     releaseDate: details.release_date,
                     firstAirDate: details.first_air_date,
                     lastAirDate: details.last_air_date,
-                    totalSeasons: details.seasons?.length,
+                    totalSeasons: details.number_of_seasons,
                     trailerPath: details.videos?.results[0]?.key,
                     certification: certification,
                     runtime: details.runtime,
@@ -94,6 +127,43 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                 setCreators(details.created_by)
                 setProductionCompanies(details.production_companies)
                 setAlsoWatch(details.recommendations.results)
+
+                if(data.collection && data.collection !== null){
+                    setCollection(data.collection)
+                }
+
+                if(details.number_of_seasons > 0) {
+                    fetch(`https://api.spectaer.com/watchlist/api/content/${details.id}/episodes`)
+                        .then(function (response) {
+                            return response.json();
+                        })
+                        .then(function (data) {
+                            console.log({episodesData: data});
+    
+                            // Group episodes by season
+                            const episodesBySeason = data.reduce((acc: any, episode: any) => {
+                            const season = episode.seasonNumber;
+                            if (!acc[season]) acc[season] = [];
+                            acc[season].push(episode);
+                            return acc;
+                            }, {});
+    
+                            // Convert to array of { seasonNumber, episodes } sorted by season
+                            const seasonsArray = Object.keys(episodesBySeason)
+                            .map(seasonNum => ({
+                                seasonNumber: parseInt(seasonNum),
+                                episodes: episodesBySeason[seasonNum].sort((a: any, b: any) => a.episodeNumber - b.episodeNumber)
+                            }))
+                            .sort((a, b) => a.seasonNumber - b.seasonNumber);
+    
+                            // Set state once
+                            setEpisodes(seasonsArray);
+    
+                            // Optional: mark all seasons as loaded
+                            setIsLoadingEpisodes(seasonsArray.map(s => s.seasonNumber));
+                        })
+                }
+
             })
     }, [info.id, info.type])
 
@@ -107,9 +177,48 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
         setCreators([])
         setProductionCompanies(null)
         setAlsoWatch(null)
+        setCollection(null)
+        setCollectionScrollable(false)
+        setCastScrollable(false)
         setShowMore(false)
         onClose && onClose()
     }
+
+    useEffect(() => {
+        const isScrollable = (element: HTMLDivElement | null) => Boolean(element && element.scrollWidth > element.clientWidth);
+
+        const updateScrollables = () => {
+            setCastScrollable(isScrollable(castScrollRef.current));
+            setCollectionScrollable(isScrollable(collectionScrollRef.current));
+        };
+
+        updateScrollables();
+        window.addEventListener('resize', updateScrollables);
+
+        return () => {
+            window.removeEventListener('resize', updateScrollables);
+        };
+    }, [cast?.length, collection?.parts?.length]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (seasonDropdownOpen && seasonDropdownRef.current && !seasonDropdownRef.current.contains(event.target as Node)) {
+                setSeasonDropdownOpen(false);
+            }
+        };
+
+        window.addEventListener('pointerdown', handleClickOutside);
+        return () => window.removeEventListener('pointerdown', handleClickOutside);
+    }, [seasonDropdownOpen]);
+
+    useEffect(() => {
+        if ((episodes?.length ?? 0) > 0 && selectedSeason === null) {
+            setSelectedSeason(episodes[0].seasonNumber);
+        }
+
+        const season = episodes.find((s: any) => s.seasonNumber === selectedSeason);
+        setSelectedSeasonEpisodes(season ? season.episodes : []);
+    }, [episodes, selectedSeason]);
 
     const logoSize = (aspect_ratio: number) => {
         let imageWidth = window.innerWidth > 500 ? 300 : window.innerWidth * 0.6;
@@ -254,56 +363,66 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
             </div>
 
             <div ref={modalRef} className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
-                <img
-                    src={`https://image.tmdb.org/t/p/w500//${selectedContent?.logoPath}`}
-                    style={{ justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(selectedContent?.logoAspectRatio).width, height: logoSize(selectedContent?.logoAspectRatio).height, marginBottom: 5 }}
-                    alt={selectedContent?.title}
-                />
+                {selectedContent?.logoPath ? (
+                    <img
+                        src={`https://image.tmdb.org/t/p/w500//${selectedContent?.logoPath}`}
+                        style={{ justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(selectedContent?.logoAspectRatio).width, height: logoSize(selectedContent?.logoAspectRatio).height, marginBottom: 5 }}
+                        alt={selectedContent?.title}
+                    />
+                ) : (
+                    <Skeleton width={'60%'} height={"100px"} className="left-[50%] translate-x-[-50%] rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+                )}
+
 
                 <button className="absolute z-10 top-3 right-3 cursor-pointer hover:scale-105 active:scale-95 transition-all bg-fuchsia-500/20 rounded-full backdrop-blur-sm" onClick={handleOnClose}>
                     <BiX size={35} color={`rgba(${settings.secondaryColor}, 1)`} />
                 </button>
 
-                <div className="flex justify-center gap-2">
-                    {/* <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent?.releaseDate}>{selectedContent?.releaseDate?.substring(0, 4)}</p> */}
-                    {selectedContent?.firstAirDate ? (
-                        <div className="flex gap-0.5">
-                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent.firstAirDate}>
-                                {selectedContent?.firstAirDate?.substring(0, 4)}
-                            </p>
-                            {selectedContent?.lastAirDate && (
-                                <>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>-</p>
-                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent.lastAirDate}>
-                                        {selectedContent?.lastAirDate?.substring(0, 4)}
-                                    </p>
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent?.releaseDate}>{selectedContent?.releaseDate?.substring(0, 4)}</p>
-                    )}
+                {selectedContent !== null ? (
+                    <div className="flex justify-center gap-2">
+                        {selectedContent?.firstAirDate ? (
+                            <div className="flex gap-0.5">
+                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent.firstAirDate}>
+                                    {selectedContent?.firstAirDate?.substring(0, 4)}
+                                </p>
+                                {selectedContent?.lastAirDate && (
+                                    <>
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>-</p>
+                                        <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent.lastAirDate}>
+                                            {selectedContent?.lastAirDate?.substring(0, 4)}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} title={selectedContent?.releaseDate}>{selectedContent?.releaseDate?.substring(0, 4)}</p>
+                        )}
 
-                    {selectedContent?.certification && (
-                        <>
-                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.certification}</p>
-                        </>
-                    )}
-                    {selectedContent?.runtime && selectedContent?.runtime !== null ? (
-                        <>
-                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                            <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.runtime > 60 ? `${Math.floor(selectedContent?.runtime / 60)}h ${selectedContent?.runtime % 60}m` : `${selectedContent?.runtime} mins`}</p>
-                        </>
-                    ) : (
-                        selectedContent?.totalSeasons && (
+                        {selectedContent?.certification && (
                             <>
                                 <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
-                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.totalSeasons} seasons</p>
+                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.certification}</p>
                             </>
-                        )
-                    )}
-                </div>
+                        )}
+                        {selectedContent?.runtime && selectedContent?.runtime !== null ? (
+                            <>
+                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
+                                <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.runtime > 60 ? `${Math.floor(selectedContent?.runtime / 60)}h ${selectedContent?.runtime % 60}m` : `${selectedContent?.runtime} mins`}</p>
+                            </>
+                        ) : (
+                            selectedContent?.totalSeasons && (
+                                <>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>•</p>
+                                    <p className="text-sm font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{selectedContent?.totalSeasons} seasons</p>
+                                </>
+                            )
+                        )}
+                    </div>
+                ) : (
+                    <Skeleton width={'30%'} height={"18px"} className="left-[50%] translate-x-[-50%] rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+                )}
+
+
 
                 <div className="flex justify-center ml-auto mr-auto gap-2 max-w-1/2 flex-wrap">
                     {selectedContent?.genres?.map((genre: string, index: number) => (
@@ -329,18 +448,18 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                         </div>
 
                         <div className="flex w-[20%] ">
-                            <div className="z-2 w-full " style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                            <div className="z-2 w-full rounded-xl" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                 {(images && images.posters && images.posters[1]) && (
                                     <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                 )}
                             </div>
-                            <div className=" z-1  w-[80%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                            <div className=" z-1 rounded-xl w-[80%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                 {(images && images.posters && images.posters[2]) && (
                                     <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                 )}
                             </div>
 
-                            <div className=" z-0  w-[80%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                            <div className=" z-0 rounded-xl w-[80%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                 {(images && images.posters && images.posters[3]) && (
                                     <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                 )}
@@ -364,7 +483,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                             </div>
 
                             <div className="flex w-[55%] ">
-                                <div className="z-2 w-[60%] " style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                <div className="z-2 w-[60%]" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                     {(images && images.posters && images.posters[1]) && (
                                         <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                     )}
@@ -414,14 +533,90 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                             )}
                         </div>
 
+                        {(episodes && episodes.length > 0) && (
+                            <div className="relative flex flex-col text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Episodes</h1>
 
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="relative" ref={seasonDropdownRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSeasonDropdownOpen((v) => !v)}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-2xl bg-cyan-800/30 border border-cyan-700 text-white cursor-pointer hover:scale-105 transition-all`}
+                                            style={{ color: `rgba(${settings.primaryColor}, 1)` }}
+                                        >
+                                            <span className="font-bold">Season {selectedSeason ?? episodes[0]?.seasonNumber}</span>
+                                            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 1L6 6L11 1" stroke="cyan" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </button>
+
+                                        {seasonDropdownOpen && (
+                                            <div className="absolute mt-2 w-44 rounded-2xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50 overflow-hidden z-10 max-h-60 overflow-y-auto no-scrollbar">
+                                                {episodes.map((s: any) => (
+                                                    <button
+                                                        key={s.seasonNumber}
+                                                        type="button"
+                                                        className="block w-full px-4 py-3 text-left text-sm text-cyan-300 cursor-pointer hover:bg-cyan-900/80 transition-colors"
+                                                        onClick={() => { setSelectedSeason(s.seasonNumber); setSeasonDropdownOpen(false); }}
+                                                    >
+                                                        Season {s.seasonNumber}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="relative rounded-2xl overflow-visible">
+                                    <div className="flex gap-2 overflow-x-scroll no-scrollbar p-1">
+                                        {((!isLoadingEpisodes.includes(selectedSeason as any) || isLoadingEpisodes.length === 0) ? Array.from({ length: SKELETON_COUNT }) : selectedSeasonEpisodes).map((episode: any, index: number) => (
+                                            <div key={(episode && episode.id) ?? index} className="w-[500px] mr-1">
+                                                {/* onClick={() => router.push(`?episode=${episode?.id}`)} */}
+                                                <button disabled={!isLoadingEpisodes.includes(selectedSeason as any)} onClick={() => {}} className="h-[150px] aspect-3/2 text-left cursor-pointer hover:scale-105 transition-all">
+                                                    {!isLoadingEpisodes.includes(selectedSeason as any) ? (
+                                                        <Skeleton width={210} height={120} />
+                                                    ) : (
+                                                        <img src={`https://image.tmdb.org/t/p/w500/${episode.stillPath}`} className="w-full h-full object-cover rounded-lg mb-1" alt={episode?.name} />
+                                                    )}
+
+                                                    <div>
+                                                        {!isLoadingEpisodes.includes(selectedSeason as any) ? (
+                                                            <Skeleton width={210} height={120} />
+                                                        ) : (
+                                                            <p className="text-sm font-bold line-clamp-2 text-zinc-200" title={episode?.name}>
+                                                                {episode?.episodeNumber || 0}. {episode?.name || null}
+                                                            </p>
+                                                        )}
+
+                                                        {!isLoadingEpisodes.includes(selectedSeason as any) ? (
+                                                            <Skeleton width={210} height={120} />
+                                                        ) : (
+                                                            <div className="flex font-semibold text-xs gap-1" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
+                                                                <p>{(episode?.airDate) ? `${months[parseInt(episode.airDate.split('-')[1]) - 1]} ${episode.airDate.split('-')[2]}, ${episode.airDate.split('-')[0]}` : ''}</p>
+                                                                <p>•</p>
+                                                                <p>{(episode && episode.runtime) ? (episode.runtime > 60 ? `${Math.floor(episode.runtime / 60)}h ${episode.runtime % 60}m` : `${episode.runtime}m`) : null}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl select-none pointer-events-none" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
+                                </div>
+                            </div>
+                        )}
+
+                        
 
                         <div className="relative flex flex-col text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Cast</h1>
 
                             <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                 <div className="rounded-2xl overflow-hidden">
-                                    <div className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
+                                    <div ref={castScrollRef} className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
                                         {(() => {
                                             const seen = new Map<number, {
                                                 member: any; characters: string[]
@@ -436,20 +631,46 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                                     seen.get(c.id)?.characters.push(c.character);
                                                 }
                                             });
-                                            return result.map((c) => (
-                                                <div key={c.member.id ?? c.member.name} className="flex flex-col w-[100px] shrink-0 cursor-pointer hover:scale-105 transition-all" onClick={() => onClick && onClick(c.member, "person")}>
+                                            return result.map((c, i) => (
+                                                <button key={c.member.id ?? c.member.name} className={`flex flex-col w-[100px] shrink-0 ${i === result.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c.member, "person")}>
                                                     <img src={`https://image.tmdb.org/t/p/w500/${c.member.profile_path}`} className="w-[100px] h-[150px] rounded-lg mb-1" alt={c.member.name} />
-                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-200 ">{c.member.name}</p>
-                                                    <p className="text-xs line-clamp-2 leading-none font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.characters.join(", ")}</p>
-                                                </div>
+                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-200">{c.member.name}</p>
+                                                    <p className="text-xs line-clamp-2 leading-none font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.characters.join(", ")}</p>
+                                                </button>
                                             ));
                                         })()}
                                     </div>
 
-                                    <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl select-none pointer-events-none" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
+                                    {castScrollable && (
+                                        <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl select-none pointer-events-none" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
+                                    )}
                                 </div>
                             </div>
                         </div>
+
+                        {(collection !== null && collection?.parts?.length > 0) && (
+                            <div className="relative flex flex-col text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{collection.name}</h1>
+
+                                <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                                    <div className="rounded-2xl overflow-hidden">
+                                        <div ref={collectionScrollRef} className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
+                                            {collection?.parts?.map((c: any, i: number) => (
+                                                <div key={c.id} className={`flex flex-col w-[100px] shrink-0 ${i === collection.parts.length - 1 ? "mr-2" : ""} cursor-pointer hover:scale-105 transition-all`} onClick={() => router.push(`?${info.type}=${c.id}`)}>
+                                                    <img src={`https://image.tmdb.org/t/p/w500/${c.poster_path}`} className="w-[100px] h-[150px] rounded-lg mb-1" alt={c.title} />
+                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-200 ">{c.title}</p>
+                                                    <p className="text-xs line-clamp-2 leading-none font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.release_date?.substring(0, 4)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {collectionScrollable && (
+                                            <div className="absolute top-0 right-0 bottom-0 w-[60px] rounded-r-2xl select-none pointer-events-none" style={{ background: `linear-gradient(to left, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0))`, zIndex: 1 }} />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex flex-col text-zinc-200 text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Crew</h1>
@@ -547,12 +768,12 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                 {alsoWatch.slice(0, 3).map((c: any) => (
                                     <button
                                         key={c.id ?? c.tmdbId ?? c.title}
-                                        className="flex flex-col gap-1 rounded-lg cursor-pointer hover:scale-105 transition-all p-2"
+                                        className="flex flex-col gap-1 rounded-lg w-[33%] lg:w-full ml-auto mr-auto cursor-pointer hover:scale-105 transition-all p-2"
                                         style={{ color: `rgba(${settings.secondaryColor}, 1)`, }}
                                         onClick={() => router.push(`?${info.type}=${c.id}`)}
                                         // onClick={() => onClick && onClick(c, "movie")}
                                     >
-                                        <img src={`https://image.tmdb.org/t/p/original${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
+                                        <img src={`https://image.tmdb.org/t/p/original/${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
 
                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.title}</p>
                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.secondaryColor}, 1)` }}>{c.release_date?.substring(0, 4)}</p>

@@ -201,31 +201,39 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
             const objects = data[0].objects;
 
-            // Fetch backdrops for each object in parallel
             const objectsWithBackdrops = await Promise.all(
                 objects.map(async (item: any) => {
-                try {
-                    console.log({item})
+                    try {
+                        let backdrop = null;
 
-                    let isMovie = item.runtime !== null || item.totalSeasons <= 0;
+                        
+                        let isMovie = item.runtime !== null || item.totalSeasons <= 0;
+                        
+                        // console.log({isMovie})
+                        
+                        if(item.backdropPath === null) {
+                            console.log(`Fetching backdrop for ${item.title}`)
+                            const backdropRes = await fetch(
+                                `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=${isMovie === true ? 'movie' : 'tv_series'}`
+                            );
+                            const backdropData = await backdropRes.json();
 
-                    console.log({isMovie})
+                            backdrop = backdropData.details.images?.backdrops[0].file_path || null;
+                        } else {
+                            backdrop = item.backdropPath;
+                        }
 
-                    const backdropRes = await fetch(
-                        `https://api.spectaer.com/watchlist/api/content/extended-details?id=${item.tmdbId}&type=${isMovie === true ? 'movie' : 'tv_series'}`
-                    );
-                    const backdropData = await backdropRes.json();
-                    return {
-                    ...item,
-                    backdrops: backdropData.details.images?.backdrops || [],
-                    };
-                } catch (err) {
-                    console.error("Error fetching backdrops for", item.tmdbId, err);
-                    return {
-                    ...item,
-                    backdrops: [],
-                    };
-                }
+                        return {
+                            ...item,
+                            backdrops: backdrop ? [backdrop] : [],
+                        };
+                    } catch (err) {
+                        console.error("Error fetching backdrops for", item.tmdbId, err);
+                        return {
+                        ...item,
+                        backdrops: [],
+                        };
+                    }
                 })
             );
 

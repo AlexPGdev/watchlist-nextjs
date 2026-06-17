@@ -59,7 +59,7 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
                             <div className="relative w-full aspect-[1.778]" onClick={() => onContentClick && onContentClick(item)}>
 
                                 {item?.backdrops && item?.backdrops[0] ? (
-                                    <img src={`https://image.tmdb.org/t/p/original/${item?.backdrops[0]?.file_path}`} className="w-full h-full transition-all group-hover:brightness-50" style={{ objectFit: 'cover' }} />
+                                    <img src={`https://image.tmdb.org/t/p/original/${item?.backdrops[0]}`} className="w-full h-full transition-all group-hover:brightness-50" style={{ objectFit: 'cover' }} />
                                 ) : (
                                     <div className="w-full h-full bg-black transition-all group-hover:brightness-50">
                                         <img src={`https://image.tmdb.org/t/p/original/${item?.posterPath}`} className="w-full h-full" style={{ objectFit: 'cover', filter: "blur(30px)" }} />
