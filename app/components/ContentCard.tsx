@@ -42,32 +42,34 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const renderTitleWithHighlight = () => {
+        const title = content.name ? content.name : content.title;
         const query = typeof focusedTitle === 'string' ? focusedTitle.trim() : '';
-        if (!query) return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+        if (!query) return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={title}>{title}</h2>;
 
         try {
             const q = query.toLowerCase();
             const regex = new RegExp("(" + escapeRegex(q) + ")", 'i');
-            const match = content.title.match(regex);
+
+            const match = title.match(regex);
 
             if (!match || match.index === undefined) {
-                return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+                return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={title}>{title}</h2>;
             }
 
             const start = match.index;
             const matchedText = match[0];
-            const before = content.title.substring(0, start);
-            const after = content.title.substring(start + matchedText.length);
+            const before = title.substring(0, start);
+            const after = title.substring(start + matchedText.length);
 
             return (
-                <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>
+                <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={title}>
                     {before}
                     <span className="font-bold text-md tracking-wider inline" style={{ color: `#fff7a8`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{matchedText}</span>
                     {after}
                 </h2>
             );
         } catch (e) {
-            return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={content.title}>{content.title}</h2>;
+            return <h2 className="font-bold leading-none line-clamp-1 text-md tracking-wider" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }} title={title}>{title}</h2>;
         }
     }
 
@@ -91,19 +93,62 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                     )}
 
                     <div className="relative rounded-xl overflow-hidden">
-                        <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} draggable={false} />
+                        {(content.posterPath && content.posterPath !== null) ? (
+                            <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} draggable={false} />
+                        ) : (
+                            content.movies && (
+                                <div className="relative w-full h-full rounded-xl overflow-hidden">
+                                    <div className="grid grid-cols-2 relative w-full h-full rounded-xl overflow-hidden brightness-50 backdrop-blur-sm">
+                                        {content.movies.slice(0, 4).map((movie: any) => (
+                                            <img key={movie.id} src={`https://image.tmdb.org/t/p/w500/${movie.posterPath}`} className="w-full h-full object-cover" alt={movie.title} draggable={false} />
+                                        ))}
+                                    </div>
+                                    <p className="absolute top-0 w-full h-full font-bold content-center text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.name}</p>
+                                </div>
+                            )
+                        )}
+
                         <div className="absolute w-full h-20 bottom-0 bg-gradient-to-t from-black to-transparent"></div>
                         <div className="flex flex-col absolute bottom-2 left-2 gap-1 ">
                             {renderTitleWithHighlight()}
                             <div className="flex gap-1 flex-nowrap">
-                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.releaseDate.substring(0, 4)}</p>
-                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
-                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.certification}</p>
-                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
-                                {content.contentType === 'movie' ? (
-                                    <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.runtime > 60 ? `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` : `${content.runtime} mins`}</p>
+                                {content.movies ? (
+                                    <>
+                                        <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>
+                                            {(() => {
+                                                const years = content.movies.map((m: any) => parseInt(m.releaseDate?.substring(0, 4) || '0')).filter((y: number) => y > 0);
+                                                const minYear = Math.min(...years);
+                                                const maxYear = Math.max(...years);
+                                                return minYear === maxYear ? minYear : `${minYear}-${maxYear}`;
+                                            })()}
+                                        </p>
+
+                                        <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
+                                        <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.movies.length} movies</p>
+                                    </>
                                 ) : (
-                                    <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.totalSeasons} seasons</p>
+                                    <>
+                                        <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content?.releaseDate?.substring(0, 4)}</p>
+                                        {content.certification && (
+                                            <>                                    
+                                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
+                                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.certification}</p>
+                                            </>
+                                        )}
+                                        {content.contentType === 'movie' ? (
+                                            <>                                    
+                                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
+                                                <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.runtime > 60 ? `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` : `${content.runtime} mins`}</p>
+                                            </>
+                                        ) : (
+                                            content.totalSeasons > 0 && (
+                                                <>                                        
+                                                    <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
+                                                    <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.totalSeasons} seasons</p>
+                                                </>
+                                            )
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

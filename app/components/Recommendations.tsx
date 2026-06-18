@@ -36,7 +36,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
 
     return (
         recommendations.map((item: any) => (
-            item.cacheKey !== 'trending' && (
+            (item.cacheKey !== 'trending') && (
                 <div key={item.cacheKey} className="flex flex-col select-none">
                     <a className="flex gap-1 cursor-pointer group" href={`/explore/${item.cacheKey}`}>
                         <div>

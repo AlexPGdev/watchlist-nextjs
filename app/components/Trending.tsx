@@ -77,7 +77,7 @@ export const Trending = React.memo(function Trending({ item, onContentClick }: T
                                         if(!itemInWatchlist) return null
 
                                         return (
-                                            <div className="absolute top-0 right-0 p-1 px-2 bg-cyan-800/80 rounded-l-lg group-hover:brightness-50 transition-all">
+                                            <div className="absolute top-0 right-0 p-1 px-2 bg-cyan-800/80 rounded-bl-lg group-hover:brightness-50 transition-all">
                                                 <p className="text-sm font-semibold flex items-center justify-center h-full" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
                                                     {itemInWatchlist.watched ? `Watched ${new Date(itemInWatchlist.watched ? itemInWatchlist.watchDate : (itemInWatchlist.started && !itemInWatchlist.watched) ? itemInWatchlist.startedDate : 0).toLocaleDateString('en-GB')}` : "In your watchlist"}
                                                 </p>

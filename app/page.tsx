@@ -13,6 +13,7 @@ import { LayoutGroup } from "motion/react";
 import { LoginModal } from "@/components/modals/LoginModal";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import Cookies from 'js-cookie';
 
 export default function Home() {
   const { 

@@ -3,6 +3,7 @@ export interface Content {
     tmdbId: number
     imdbId: number
     title: string
+    name: string
     description: string
     posterPath: string
     logoPath: string
@@ -30,4 +31,5 @@ export interface Content {
     trailerPath: string
     recommendedMovies: number[]
     recommendedTvSeries: number[] | null
+    movies: any[]
 }
