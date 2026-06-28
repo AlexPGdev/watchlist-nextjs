@@ -10,10 +10,8 @@ import { useContent } from "@/hooks/useContent";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Content } from "@/types/content";
 import { LayoutGroup } from "motion/react";
-import { LoginModal } from "@/components/modals/LoginModal";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import Cookies from 'js-cookie';
+import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components";
 
 export default function Home() {
   const { 
@@ -23,6 +21,8 @@ export default function Home() {
     removeContent,
   } = useContent();
 
+  const { user, loading, refreshAuth } = useWorkOSAuth();
+
   const router = useRouter();
 
   const [filteredContent, setFilteredContent] = useState<Content[]>(page.pageContentDTOS);
@@ -30,7 +30,6 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -45,10 +44,17 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [type, id] = [...searchParams.entries()][0] || [];
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, [user, loading]);
+
   // console.log({type, id})
 
   useEffect(() => {
     if(type && id) {
+      setSelectedContent({id: id, type: type})
       setShowModal(true)
     }
   }, [])
@@ -180,7 +186,9 @@ export default function Home() {
   const handleContentClick = useCallback((content: Content) => {
     let scrollY = window.scrollY
 
-    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+    let contentType = content.movies ? "collection" : content.contentType.toLowerCase()
+
+    router.push(`?${contentType}=${content.tmdbId ? content.tmdbId : content.id}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
 
@@ -206,7 +214,7 @@ export default function Home() {
 
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
-      <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
+      <Header onOpenSearchResult={handleOpenSearchResult} />
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
@@ -248,6 +256,20 @@ export default function Home() {
 
         <FilterTab content={page.pageContentDTOS} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
 
+        {mounted && !loading && !user && (
+          <div className="text-center text-xl font-semibold flex flex-col gap-2 justify-center items-center">
+            <p>Log in to view your watchlist</p>
+            <button
+                className="p-3 px-6 w-fit uppercase rounded-full bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all"
+                style={{color: `rgba(${settings.primaryColor}, 1)`}}
+                onClick={() => void refreshAuth({ ensureSignedIn: true })}
+            >
+                Login
+            </button>
+          </div>
+        )}
+
+
         <LayoutGroup>
           <ContentGrid
             ref={contentGridRef}
@@ -264,8 +286,6 @@ export default function Home() {
         <Suspense fallback={null}>
           <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
         </Suspense>
-        
-        <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
       </div>
     </div>

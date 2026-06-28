@@ -32,4 +32,7 @@ export interface Content {
     recommendedMovies: number[]
     recommendedTvSeries: number[] | null
     movies: any[]
+    type: string
+    media_type: string
+    nextEpisode: number
 }

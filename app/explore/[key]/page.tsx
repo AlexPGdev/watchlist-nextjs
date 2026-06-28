@@ -9,15 +9,17 @@ import settings from "@/app/constants/settings.json";
 import { FaInfoCircle } from "react-icons/fa";
 import { ContentDetailsModal } from "@/app/components/modals/ContentDetailsModal";
 import { Content } from "@/app/types/content";
+import { useContent } from "@/app/hooks/useContent";
 
 export default function Page() {
+    const { getRecommendedSection } = useContent();
+
     const router = useRouter();
 
     const params = useParams();
 
     const key = params.key as string;
 
-    const [showLoginModal, setShowLoginModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [selectedContent, setSelectedContent] = useState<any>(null);
     const [activeExplanationIndex, setActiveExplanationIndex] = useState<number | null>(null);
@@ -29,21 +31,15 @@ export default function Page() {
 
     useEffect(() => {
         if(type && id) {
+            setSelectedContent({id: id, type: type})
             setShowModal(true)
         }
 
-        fetch(`https://api.spectaer.com/watchlist/api/page-content/recommended?section=${key}&page=0&size=100`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `RememberMe ${Cookies.get("rememberMeToken")}`,
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
+        getRecommendedSection(key)
+        .then(function (data) {
+            console.log(data)
             setRecommendedContent(data[0])
         })
-        .catch(err => console.error("Error loading recommended movies:", err));
 
 
     }, []);
@@ -56,8 +52,10 @@ export default function Page() {
 
     const handleContentClick = useCallback((content: Content) => {
         let scrollY = window.scrollY
+
+        let contentType = content.movies ? "collection" : content.contentType.toLowerCase()
     
-        router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+        router.push(`?${contentType}=${content.tmdbId ? content.tmdbId : content.id}`, { scroll: false })
         setSelectedContent(content)
         setShowModal(true)
     
@@ -69,7 +67,7 @@ export default function Page() {
 
     return (
         <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
-            <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
+            <Header onOpenSearchResult={handleOpenSearchResult} />
 
             <div>
                 <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{recommendedContent?.title}</h1>

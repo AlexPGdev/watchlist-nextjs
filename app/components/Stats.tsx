@@ -13,7 +13,10 @@ interface StatsProps {
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 function useAnimatedNumber(target: number, duration = 2500) {
-    const [value, setValue] = useState(target)
+    // Initialize to 0 to ensure server and client render the same value
+    // and then animate to `target` on the client to avoid hydration
+    // mismatches when `target` differs between server and client.
+    const [value, setValue] = useState(0)
 
     useEffect(() => {
         let start: number | null = null

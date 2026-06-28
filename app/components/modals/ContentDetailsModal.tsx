@@ -9,6 +9,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
 import { ContentView } from "./views/ContentView";
 import { PersonView } from "./views/PersonView";
+import { CollectionView } from "./views/CollectionView";
+import { EpisodeView } from "./views/EpisodeView";
 
 interface ContentDetailsModalProps {
     selectedContent: Content;
@@ -35,27 +37,103 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
     }, [open]);
 
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [type, id] = [...searchParams.entries()][0] || [];
-    const [selectedType, setSelectedType] = useState<string>('');
-    const [selectedId, setSelectedId] = useState<string>('');
 
-    const handleOnClick = (content: any, selectedType: string) => {
-        router.push(`?${selectedType}=${content.id}`);
+    const [stack, setStack] = useState<ModalPage[]>([]);
+
+    const currentPage = stack[stack.length - 1];
+
+    // const handleOnClick = (content: any, selectedType: string) => {
+    //     router.push(`?${selectedType}=${content.id}`);
+    // }
+
+    const handleOnClick = (
+        content: any,
+        selectedType: string
+    ) => {
+
+        console.log({ content, selectedType });
+
+        let id = content.tmdbId ? content.tmdbId : content.id;
+
+        if(content.episode) {
+            setStack(prev => [
+                ...prev,
+                {
+                    type: prev[prev.length - 1].type,
+                    id: content.selectedContent.tmdbId ? content.selectedContent.tmdbId : content.selectedContent.id,
+                    episode: content.episode,
+                    content: content.selectedContent
+                },
+            ]);
+        } else {
+            setStack(prev => [
+                ...prev,
+                {
+                    type: selectedType as any,
+                    id: String(id),
+                    episode: null,
+                    content: null
+                },
+            ]);
+        }
+
+    }
+
+    // useEffect(() => {
+    //     if(!open || !type || !id) return
+    //     setSelectedType(type)
+    //     setSelectedId(id)
+    // }, [type, id, open])
+
+    useEffect(() => {
+        console.log({selectedContent, open})
+        if (!open || !selectedContent) return;
+
+        console.log({ selectedContent });
+
+        let type = selectedContent.type ? selectedContent.type : selectedContent.media_type ? selectedContent.media_type : selectedContent.contentType;
+
+        setStack([
+            {
+                type: type,
+                id: String(selectedContent.tmdbId ? selectedContent.tmdbId : selectedContent.id),
+                content: null,
+                episode: null
+            },
+        ]);
+    }, [open, selectedContent]);
+
+    // const handleOnClose = () => {
+    //     setSelectedType('')
+    //     setSelectedId('')
+    //     router.push(`?`, { scroll: false })
+    //     onClose && onClose()
+    // }
+
+    const handleOnClose = () => {
+        setStack([]);
+        onClose();
+    }
+
+    const handleGoBack = () => {
+        setStack(prev => {
+            if (prev.length <= 1) {
+                handleOnClose();
+                return prev;
+            }
+
+            return prev.slice(0, -1);
+        });
     }
 
     useEffect(() => {
-        if(!open || !type || !id) return
-        setSelectedType(type)
-        setSelectedId(id)
-    }, [type, id, open])
-
-    const handleOnClose = () => {
-        setSelectedType('')
-        setSelectedId('')
-        router.push(`?`, { scroll: false })
-        onClose && onClose()
-    }
+        if (stack.length < 1) return router.push(`?`, { scroll: false });
+        if(stack[stack.length - 1].episode !== null) {
+            router.push(`?${stack[stack.length - 1].type}=${stack[stack.length - 1].id}&episode=${stack[stack.length - 1].episode.seasonNumber}&episode=${stack[stack.length - 1].episode.episodeNumber}`, { scroll: false });
+        } else {
+            router.push(`?${stack[stack.length - 1].type}=${stack[stack.length - 1].id}`, { scroll: false });
+        }
+    }, [stack]);
 
     return (
         <AnimatePresence>
@@ -80,7 +158,7 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                     >
                         <motion.div
                             ref={modalRef}
-                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-[95%] lg:w-3/5 max-h-[95%] md:max-h-[85%] z-10 bg-black/60 overflow-hidden"
+                            className="relative flex flex-col gap-2 rounded-2xl shadow-inner shadow-zinc-200/30 w-[95%] lg:w-3/5 max-w-[1000px] max-h-[95%] md:max-h-[85%] z-10 bg-black/60 overflow-hidden"
                             initial={{ opacity: 0, y: 20, scale: 0.5 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.5 }}
@@ -88,13 +166,64 @@ export const ContentDetailsModal = memo(function ContentDetailsModal({ selectedC
                             onClick={(e) => e.stopPropagation()}
                         >
 
-                            {(selectedType && selectedId) && (
+                            {/* {(selectedType && selectedId) && (
                                 (selectedType === "person") ? (
                                     <PersonView info={{ id: selectedId, type: selectedType }} onClose={handleOnClose} onClick={handleOnClick} />
-                                ) : (
+                                ) : 
+                                (selectedType === "collection") ? (
+                                    <CollectionView info={{ id: selectedId, type: selectedType }} onClose={handleOnClose} onClick={handleOnClick} />
+                                ) :
+                                (
                                     <ContentView info={{ id: selectedId, type: selectedType }} onClose={handleOnClose} onClick={handleOnClick} />
                                 )
+                            )} */}
+
+                            {currentPage && (
+                                currentPage.type === "person" ? (
+                                    <PersonView
+                                        info={{
+                                            id: currentPage.id,
+                                            type: currentPage.type
+                                        }}
+                                        onClose={handleOnClose}
+                                        onBack={handleGoBack}
+                                        onClick={handleOnClick}
+                                    />
+                                ) : currentPage.type === "collection" ? (
+                                    <CollectionView
+                                        info={{
+                                            id: currentPage.id,
+                                            type: currentPage.type
+                                        }}
+                                        onClose={handleOnClose}
+                                        onBack={handleGoBack}
+                                        onClick={handleOnClick}
+                                    />
+                                )  : currentPage.episode !== null ? (
+                                    <EpisodeView
+                                        info={{
+                                            id: currentPage.id,
+                                            type: currentPage.type,
+                                            content: currentPage.content,
+                                            episode: currentPage.episode
+                                        }}
+                                        onClose={handleOnClose}
+                                        onBack={handleGoBack}
+                                        onClick={handleOnClick}
+                                    />
+                                ) : (
+                                    <ContentView
+                                        info={{
+                                            id: currentPage.id,
+                                            type: currentPage.type
+                                        }}
+                                        onClose={handleOnClose}
+                                        onBack={handleGoBack}
+                                        onClick={handleOnClick}
+                                    />
+                                )
                             )}
+
                         </motion.div>
                     </motion.div>
                 </>

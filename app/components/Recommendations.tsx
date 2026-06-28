@@ -63,7 +63,7 @@ export const Recommendations = React.memo(function Recommendations({ recommendat
                             className="relative h-full flex gap-2 [mask-image:linear-gradient(to_right,black_90%,transparent)] py-2 overflow-x-scroll no-scrollbar overflow-y-visible"
                         >
                             {item.objects.map((object: any) => (
-                                <div key={object.movie ? object.movie.id : object.id} className="shrink-0 w-[180px]">
+                                <div key={object.movie ? object.movie.id : object.id} className="shrink-0 w-[180px] h-full">
                                     <ContentCard content={object.movie ? object.movie : object} onClick={onContentClick} onStatusChange={() => { }} onRemoveContent={() => { }} fromWatchlist={false} focusedTitle={''} ownerPage={false} />
                                 </div>
                             ))}
