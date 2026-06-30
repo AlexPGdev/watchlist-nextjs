@@ -56,7 +56,7 @@ export const Header = React.memo(function Header({ onOpenSearchResult }: HeaderP
 
             const debounceTimeout = setTimeout(async () => {
                 try {
-                    const response = await fetch(`http://192.168.178.132:8080/api/search?q=${encodeURIComponent(effectiveQuery.replace('@', ''))}`)
+                    const response = await fetch(`https://api.spectaer.com/watchlist/api/search?q=${encodeURIComponent(effectiveQuery.replace('@', ''))}`)
                     const data = await response.json()
 
                     if (data.Error) {
@@ -83,7 +83,7 @@ export const Header = React.memo(function Header({ onOpenSearchResult }: HeaderP
 
         const debounceTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`http://192.168.178.132:8080/api/content/searchContent?query=${encodeURIComponent(effectiveQuery.trim())}${yearFilter ? `&year=${yearFilter}` : ''}`)
+                const response = await fetch(`https://api.spectaer.com/watchlist/api/content/searchContent?query=${encodeURIComponent(effectiveQuery.trim())}${yearFilter ? `&year=${yearFilter}` : ''}`)
                 const data = await response.json()
 
                 if (data.Error) {

@@ -9,9 +9,10 @@ import settings from "@/constants/settings.json";
 import { useContent } from "@/hooks/useContent";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Content } from "@/types/content";
-import { LayoutGroup } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components";
+import { useAuth } from "./hooks/useAuth";
 
 export default function Home() {
   const { 
@@ -19,9 +20,11 @@ export default function Home() {
     stats,
     toggleWatched,
     removeContent,
+    setUsername,
   } = useContent();
 
   const { user, loading, refreshAuth } = useWorkOSAuth();
+  const { user: customUser, authLoaded } = useAuth();
 
   const router = useRouter();
 
@@ -29,7 +32,10 @@ export default function Home() {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
-
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [hasDismissedUsernameModal, setHasDismissedUsernameModal] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -49,6 +55,12 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
   }, [user, loading]);
+
+  useEffect(() => {
+    if (authLoaded && customUser?.usernameSet === false && !hasDismissedUsernameModal) {
+      setShowUsernameModal(true);
+    }
+  }, [authLoaded, customUser?.usernameSet, hasDismissedUsernameModal]);
 
   // console.log({type, id})
 
@@ -212,6 +224,39 @@ export default function Home() {
     setShowModal(true)
   }, []);
 
+  const handleUsernameSubmit = useCallback(() => {
+    const trimmedUsername = usernameInput.trim();
+
+    if (!trimmedUsername) {
+      setUsernameError("Please enter a username.");
+      return;
+    }
+
+    if (trimmedUsername.length < 2 || trimmedUsername.length > 20) {
+      setUsernameError("Username must be between 2 and 20 characters.");
+      return;
+    }
+
+      setUsername(trimmedUsername)
+      .then((data) => {
+        if (data.error) {
+          setUsernameError(data.error);
+        } else {
+          setUsernameError("");
+          void refreshAuth({ ensureSignedIn: true });
+        }
+      })
+      .catch((error) => {
+        console.error("Error setting username:", error);
+        setUsernameError("An error occurred. Please try again.");
+      });
+
+    setUsernameError("");
+    setUsernameInput("");
+    setShowUsernameModal(false);
+    setHasDismissedUsernameModal(true);
+  }, [usernameInput]);
+
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
       <Header onOpenSearchResult={handleOpenSearchResult} />
@@ -269,6 +314,60 @@ export default function Home() {
           </div>
         )}
 
+        <AnimatePresence>
+          {showUsernameModal && (
+            <motion.div
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="w-full max-w-md rounded-3xl border border-cyan-400/30 bg-black/80 p-6 shadow-2xl shadow-cyan-900/40"
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                transition={{ duration: 0.2 }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-400">One last step</p>
+                    <h2 className="text-2xl font-semibold text-white">Set your username</h2>
+                  </div>
+
+                  <p className="text-sm text-zinc-300">
+                    The username will be your unique identifier throughout the app.
+                  </p>
+
+                  <label className="flex flex-col gap-2 text-sm font-medium text-zinc-200">
+                    Username
+                    <input
+                      value={usernameInput}
+                      onChange={(event) => {
+                        setUsernameInput(event.target.value);
+                        if (usernameError) setUsernameError("");
+                      }}
+                      placeholder="Enter your username"
+                      className="rounded-2xl border border-cyan-400/30 bg-white/10 px-3 py-2 text-white outline-none ring-0 placeholder:text-zinc-500 focus:border-cyan-400"
+                    />
+                  </label>
+
+                  {usernameError ? <p className="text-sm text-rose-400">{usernameError}</p> : null}
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      onClick={handleUsernameSubmit}
+                      className="rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400"
+                    >
+                      Save username
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <LayoutGroup>
           <ContentGrid

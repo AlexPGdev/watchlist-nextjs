@@ -318,7 +318,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
     async function loadStreamingAvailability(newContent: any) {
         try {
             const response1 = await fetch(
-                `http://192.168.178.132:8080/api/content/streaming-availability?id=${newContent?.id
+                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id
                 }&type=${`${(info.type)}`.toLowerCase()}`
             );
 

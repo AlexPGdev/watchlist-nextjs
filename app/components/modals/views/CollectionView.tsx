@@ -23,7 +23,7 @@ export const CollectionView = memo(function CollectionView({ onClick, info, onCl
     useEffect(() => {
         if (!info.id || !info.type) return
 
-        fetch(`http://192.168.178.132:8080/api/collection/${info.id}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/collection/${info.id}`, {
             "method": "GET"
         })
             .then(function (response) {
@@ -95,11 +95,11 @@ export const CollectionView = memo(function CollectionView({ onClick, info, onCl
                 <div className="relative flex flex gap-1 w-full justify-center items-center ml-auto mr-auto">
                     <img src={`https://image.tmdb.org/t/p/original/${collection?.backdropPath}`} className="w-full object-cover rounded-2xl" alt={collection?.name} />
                     <div className="absolute flex rounded-2xl bottom-0 left-0 gap-3 bg-gradient-to-t from-black/80 to-transparent" style={{ height: '100%', width: '100%' }} draggable={false}>
-                        <button className="flex cursor-pointer hover:scale-105 transition-all" onClick={() => setFullPoster(true)}>
+                        <button className="flex h-[60%] mt-auto mb-4     cursor-pointer hover:scale-105 transition-all" onClick={() => setFullPoster(true)}>
                             <img
                                 src={`https://image.tmdb.org/t/p/original/${collection?.posterPath}`}
-                                className="object-cover rounded-2xl w-full h-full mt-auto group-hover:brightness-50 transition-all mb-4 ml-4"
-                                style={{ height: '60%', width: 'auto', objectFit: "cover", boxShadow: '2px 2px 10px rgb(0, 0, 0, 1)' }}
+                                className="object-cover rounded-2xl w-full h-full mt-auto group-hover:brightness-50 transition-all ml-4"
+                                style={{ height: '100%', width: 'auto', objectFit: "cover", boxShadow: '2px 2px 10px rgb(0, 0, 0, 1)' }}
                                 draggable={false}
                             />
                         </button>

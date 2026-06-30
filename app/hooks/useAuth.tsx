@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if(!token) return;
 
-      const response = await fetch("http://192.168.178.132:8080/api/user", {
+      const response = await fetch("https://api.spectaer.com/watchlist/api/user", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch(`http://192.168.178.132:8080/api/user/${username}`, {
+      const response = await fetch(`https://api.spectaer.com/watchlist/api/user/${username}`, {
         method: "GET",
         headers
       })
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (username: string, password: string) => {
-    const response = await fetch("http://192.168.178.132:8080/api/login", {
+    const response = await fetch("https://api.spectaer.com/watchlist/api/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signup = async (username: string, password: string) => {
-    const response = await fetch("http://192.168.178.132:8080/api/signup", {
+    const response = await fetch("https://api.spectaer.com/watchlist/api/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await fetch("http://192.168.178.132:8080/api/logout", {
+    await fetch("https://api.spectaer.com/watchlist/api/logout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

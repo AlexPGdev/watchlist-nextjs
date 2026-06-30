@@ -25,7 +25,7 @@ export const EpisodeView = memo(function EpisodeView({ onClick, info, onClose, o
         console.log({info})
         if (!info.id || !info.type) return
 
-        fetch(`http://192.168.178.132:8080/api/content/episode/${info.content.id}?season=${info.episode.seasonNumber}&episode=${info.episode.episodeNumber}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/content/episode/${info.content.id}?season=${info.episode.seasonNumber}&episode=${info.episode.episodeNumber}`, {
             "method": "GET"
         })
             .then(function (response) {
