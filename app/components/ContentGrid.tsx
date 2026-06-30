@@ -36,6 +36,7 @@ const MIN_COLUMN_WIDTH = 180;
 const GRID_GAP_MOBILE = 12;
 const GRID_GAP_DESKTOP = 20;
 const ROW_ESTIMATE_HEIGHT = 400;
+const SECTION_SCROLL_OFFSET = 100;
 
 function getGridGap() {
     if (typeof window === "undefined") return GRID_GAP_MOBILE;
@@ -105,7 +106,7 @@ const VirtualContentSection = React.memo(
         return (
             <div
                 ref={ref}
-                className="flex scroll-mt-[100px] flex-col gap-2"
+                className="flex flex-col gap-2"
                 data-section={sectionId}
             >
                 {/* <motion.h1 className="text-2xl font-bold" id={sectionId}>
@@ -118,7 +119,7 @@ const VirtualContentSection = React.memo(
     return (
         <div
             ref={ref}
-            className="flex scroll-mt-[100px] flex-col gap-2"
+            className="flex flex-col gap-2"
             data-section={sectionId}
         >
             <motion.h1 className="text-2xl font-bold" id={sectionId}>
@@ -200,11 +201,8 @@ export const ContentGrid = React.memo(
             const sectionElement = sectionRefs[section]?.current;
             if (!sectionElement) return;
 
-            sectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
-
-            window.setTimeout(() => {
-                sectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
-            }, 300);
+            const top = sectionElement.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: top - SECTION_SCROLL_OFFSET, behavior: 'smooth' });
         },
     }), [sectionRefs]);
     const { watchedContents, startedContents, toWatchContents } = useMemo(() => {

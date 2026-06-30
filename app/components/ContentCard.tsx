@@ -9,6 +9,7 @@ import { CgCheck } from "react-icons/cg";
 import Tilt from 'react-parallax-tilt';
 import { useIsMobile } from "../hooks/useMobile";
 import { Content } from "../types/content";
+import Image from "next/image";
 
 interface ContentCardProps {
     content: Content;
@@ -74,17 +75,17 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     }
 
     const cardContent = (
-        <div className="flex rounded-2xl shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)} onPointerDown={handleCardPointerDown} onPointerUp={handlePointerUp}>
+        <div className="flex rounded-2xl h-full shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)} onPointerDown={handleCardPointerDown} onPointerUp={handlePointerUp}>
             <div className={`relative flex flex-col p-4`}>
                 
                 <div className="absolute w-full h-full top-0 left-0 rounded-xl overflow-hidden -z-10">
                     <img
-                        src={content.posterPath ? content.posterPath : `https://image.tmdb.org/t/p/w500//${content?.posterPath}`}
+                        src={`${content.posterPath}`.includes('https://image.tmdb.org') ? content.posterPath : `https://image.tmdb.org/t/p/w500/${content?.posterPath}`}
                         style={{ width: '100%', height: "100%", zIndex: -1, opacity: 1, filter: "blur(15px)" }}
                     />
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5 h-full">
                     {(content.watched || (content.started && !content.watched)) && (
                         <div className="absolute flex w-full p-1 bg-black/60 z-10 top-0 left-0 justify-center text-nowrap items-center border-b-1 border-cyan-800 backdrop-blur-sm">
                             <CgCheck size={20} style={{ color: `rgba(${settings.primaryColorDark}, 1)` }} />
@@ -92,17 +93,38 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                         </div>
                     )}
 
-                    <div className="relative rounded-xl overflow-hidden">
+                    {/* {new Date()} */}
+
+                    {(new Date(content?.releaseDate) > new Date()) && (
+                        <div className="absolute flex flex-col w-full p-1 bg-black/60 z-10 top-0 left-0 justify-center text-nowrap items-center border-b-1 border-cyan-800 backdrop-blur-sm">
+                            <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Releasing on</p>
+                            <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{new Date(content.releaseDate).toLocaleDateString('en-GB', { dateStyle: 'medium' })}</p>
+                        </div>
+                    )}
+
+                    {(content?.nextEpisode !== null && new Date(content?.nextEpisode) >= new Date()) && (
+                        <div className="absolute flex flex-col w-full p-1 bg-black/60 z-10 top-0 left-0 justify-center text-nowrap items-center border-b-1 border-cyan-800 backdrop-blur-sm">
+                            <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>New episode on</p>
+                            <p className="text-xs font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{new Date(content?.nextEpisode).toLocaleDateString('en-GB', { dateStyle: 'medium' })}</p>
+                        </div>
+                    )}
+
+                    <div className="relative rounded-xl overflow-hidden h-full">
                         {(content.posterPath && content.posterPath !== null) ? (
-                            <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={content.title} draggable={false} />
+                            <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} width={500} height={500} className="w-full h-full object-cover rounded-xl" alt={content.title || content.name} draggable={false} />
                         ) : (
                             content.movies && (
                                 <div className="relative w-full h-full rounded-xl overflow-hidden">
-                                    <div className="grid grid-cols-2 relative w-full h-full rounded-xl overflow-hidden brightness-50 backdrop-blur-sm">
-                                        {content.movies.slice(0, 4).map((movie: any) => (
-                                            <img key={movie.id} src={`https://image.tmdb.org/t/p/w500/${movie.posterPath}`} className="w-full h-full object-cover" alt={movie.title} draggable={false} />
-                                        ))}
-                                    </div>
+                                    {(() => {
+                                        const posterMovies = content.movies ? content.movies.filter((movie: any) => movie.posterPath !== null) : [];
+                                        return (
+                                            <div className={`grid ${posterMovies.length >= 2 ? 'grid-cols-2' : 'grid-cols-1'} relative w-full h-full rounded-xl overflow-hidden brightness-50 backdrop-blur-sm`}>
+                                                {posterMovies.slice(0, 4).map((movie: any) => (
+                                                    <img key={movie.id} src={`https://image.tmdb.org/t/p/w500/${movie.posterPath}`} className="w-full h-full object-cover" alt={movie.title} draggable={false} />
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
                                     <p className="absolute top-0 w-full h-full font-bold content-center text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.name}</p>
                                 </div>
                             )
@@ -135,8 +157,8 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                                                 <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.certification}</p>
                                             </>
                                         )}
-                                        {content.contentType === 'movie' ? (
-                                            <>                                    
+                                        {(content.contentType === 'movie' && content.runtime !== null && content.runtime > 0) ? (
+                                            <>
                                                 <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>•</p>
                                                 <p className="text-xs text-nowrap tracking-wider font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)`, textShadow: `2px 2px 4px rgba(0, 0, 0, 1)` }}>{content.runtime > 60 ? `${Math.floor(content.runtime / 60)}h ${content.runtime % 60}m` : `${content.runtime} mins`}</p>
                                             </>
@@ -179,11 +201,11 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     )
 
     return isMobile ? (
-        <div className={`${content.watched || content.started ? "opacity-80" : ""} rounded-2xl overflow-hidden select-none hover:scale-105 active:scale-95 transition-all duration-150`}>
+        <div className={`${content.watched || content.started ? "opacity-80" : ""} h-full rounded-2xl overflow-hidden select-none hover:scale-105 active:scale-95 transition-all duration-150`}>
             {cardContent}
         </div>
     ) : (
-        <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} select-none parallax-effect-img ${!isButtonActive ? "active:scale-95" : ""}`}>
+        <Tilt tiltReverse={true} tiltMaxAngleX={5} tiltMaxAngleY={5} transitionSpeed={500} scale={1.05} glareEnable={true} glareMaxOpacity={0.1} glareColor="#ffffff" glarePosition="all" glareBorderRadius="16px" className={`${content.watched || content.started ? "opacity-80" : ""} h-full select-none parallax-effect-img ${!isButtonActive ? "active:scale-95" : ""}`}>
             {cardContent}
         </Tilt>
     )

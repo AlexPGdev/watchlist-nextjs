@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { Header } from "../components/Header";
-import { useAuth } from "../hooks/useAuth";
 import { useContent } from "../hooks/useContent";
 import { Content } from "../types/content";
 import 'swiper/css';
@@ -19,9 +18,7 @@ export default function Page() {
 
   const router = useRouter();
 
-  const { user, isLoggedIn } = useAuth();
   const { page } = useContent();
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -32,16 +29,20 @@ export default function Page() {
 
   useEffect(() => {
     if(type && id) {
+      setSelectedContent({id: id, type: type})
       setShowModal(true)
     }
   }, [])
 
   useEffect(() => {
     loadRecommendedMovies()
-  }, [page.pageContentDTOS, isLoggedIn])
+  }, [page.pageContentDTOS])
 
   const handleContentClick = useCallback((content: Content) => {
-    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+
+    let contentType = content.movies ? "collection" : content.contentType.toLowerCase()
+
+    router.push(`?${contentType}=${content.tmdbId ? content.tmdbId : content.id}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
   }, []);
@@ -54,7 +55,7 @@ export default function Page() {
 
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
-      <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
+      <Header onOpenSearchResult={handleOpenSearchResult} />
 
       <div className="flex flex-col justify-between gap-25 lg:flex-row">
         <div className="flex flex-col w-full lg:w-3/4 gap-4">

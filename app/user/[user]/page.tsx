@@ -11,6 +11,7 @@ import { ContentCard } from "@/app/components/ContentCard";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { ContentDetailsModal } from "@/app/components/modals/ContentDetailsModal";
 import { Content } from "@/app/types/content";
+import Image from "next/image";
 
 export default function Page() {
     const { getProfile, profile } = useAuth();
@@ -27,6 +28,7 @@ export default function Page() {
 
     useEffect(() => {
         if(type && id) {
+            setSelectedContent({id: id, type: type})
             setShowModal(true)
         }
         getProfile()
@@ -46,19 +48,21 @@ export default function Page() {
     const handleContentClick = useCallback((content: Content) => {
 
         let isMovie = content.runtime !== null || content.totalSeasons <= 0;
-        
+
+        let contentType = content.movies ? "collection" : content.contentType.toLowerCase()
+    
         console.log({content})
-        router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+        router.push(`?${contentType}=${content.tmdbId ? content.tmdbId : content.id}`, { scroll: false })
         setSelectedContent(content)
         setShowModal(true)
     }, []);
 
     return (
         <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
-            <Header onOpen={() => {}} onOpenSearchResult={() => {}} />
+            <Header onOpenSearchResult={() => {}} />
 
             <div className="flex flex-col gap-3 justify-center w-full items-center">
-                <img src={`https://alexpgdev.com/peepoHey.gif`} alt="user" className="w-30 h-30 rounded-full border-2 border-cyan-800" />
+                <img src="/peepoHey.gif" alt="user" className="w-30 h-30 rounded-full border-2 border-cyan-800" />
 
                 <div className="flex flex-col text-center">
                     <p className="text-xl font-bold tracking-wider" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{profile?.username}</p>
@@ -71,7 +75,7 @@ export default function Page() {
             <div className="flex flex-col gap-2 w-fit ml-auto mr-auto">
                 {profile?.watchlist?.length > 0 && (
                     <div>
-                        <a className="flex gap-1 cursor-pointer group items-center border-b border-cyan-800 pb-2" href={`/user/${profile?.username}/watchlist`}>
+                        <a className="flex cursor-pointer group items-center border-b border-cyan-800 pb-2" href={`/user/${profile?.username}/watchlist`}>
                             <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Watchlist</h1>
                             <GoChevronRight className="cursor-pointer text-cyan-500 group-hover:text-cyan-100 transition-all" size={30} />
                         </a>
@@ -79,7 +83,8 @@ export default function Page() {
                         <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-visible">
                             {profile?.watchlist?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
-                                    <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
+                                    {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
+                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>
@@ -89,13 +94,14 @@ export default function Page() {
                 {profile?.favorites?.length > 0 && (
                     <div>
                         <a className="flex gap-1 group items-center border-b border-cyan-800 pb-2">
-                            <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Favorite Picks</h1>
+                            <h1 className="text-xl font-bold leading-none" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Favorite Picks</h1>
                         </a>
 
                         <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-y-visible">
                             {profile?.favorites?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
-                                    <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
+                                    {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
+                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>
@@ -105,13 +111,14 @@ export default function Page() {
                 {profile?.recentlyWatched?.length > 0 && (                    
                     <div>
                         <a className="flex gap-1 group items-center border-b border-cyan-800 pb-2">
-                            <h1 className="text-xl font-bold leading-none hover:brightness-225" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Recently Watched</h1>
+                            <h1 className="text-xl font-bold leading-none" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>Recently Watched</h1>
                         </a>
 
                         <div className="relative h-full flex gap-2 py-2 no-scrollbar overflow-y-visible">
                             {profile?.recentlyWatched?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
-                                    <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} />
+                                    {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
+                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>

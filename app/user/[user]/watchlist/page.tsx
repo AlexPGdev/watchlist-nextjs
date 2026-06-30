@@ -10,7 +10,6 @@ import { useContent } from "@/hooks/useContent";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Content } from "@/types/content";
 import { LayoutGroup } from "motion/react";
-import { LoginModal } from "@/components/modals/LoginModal";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -39,7 +38,6 @@ export default function Page() {
   const [showModal, setShowModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -52,12 +50,18 @@ export default function Page() {
   const [quickViewRemainingMs, setQuickViewRemainingMs] = useState(0)
 
   const [ownerPage, setOwnerPage] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const searchParams = useSearchParams();
   const [type, id] = [...searchParams.entries()][0] || [];
 
   useEffect(() => {
+    // Mark component as mounted so we can render client-only values
+    // (prevents hydration mismatch when server-rendered HTML omits them)
+    setMounted(true)
+
     if(type && id) {
+      setSelectedContent({id: id, type: type})
       setShowModal(true)
     }
   }, [])
@@ -204,11 +208,11 @@ export default function Page() {
   };
 
   const handleContentClick = useCallback((content: Content) => {
-    console.log(`Content clicked: ${content.title}`)
-
     let scrollY = window.scrollY
 
-    router.push(`?${content.contentType.toLowerCase()}=${content.tmdbId}`, { scroll: false })
+    let contentType = content.movies ? "collection" : content.contentType.toLowerCase()
+
+    router.push(`?${contentType}=${content.tmdbId ? content.tmdbId : content.id}`, { scroll: false })
     setSelectedContent(content)
     setShowModal(true)
 
@@ -235,11 +239,11 @@ export default function Page() {
 
   return (
     <div className="page flex flex-col p-4 sm:p-4 md:p-4 lg:px-[10%] xl:px-[18%] gap-5 md:gap-5 tracking-wider">
-      <Header onOpen={() => setShowLoginModal(true)} onOpenSearchResult={handleOpenSearchResult} />
+      <Header onOpenSearchResult={handleOpenSearchResult} />
       <Stats stats={stats} />
 
       <div className="flex flex-col gap-3">
-        <h1 className="text-3xl font-bold">{!ownerPage ? `${userPage.ownerName}'s` : ""} Watchlist</h1>
+        <h1 className="text-3xl font-bold">{mounted && !ownerPage ? `${userPage.ownerName}'s` : ""} Watchlist</h1>
         
         {showRecentWatched ? (
           <button className="flex flex-col gap-2 p-2 text-start rounded-2xl bg-cyan-800/40 hover:bg-cyan-700/60 transition-all select-none cursor-pointer" onClick={handleContentClick.bind(null, recentWatched as Content)}>
@@ -277,25 +281,25 @@ export default function Page() {
 
         <FilterTab content={userPage.pageContentDTOS} scrollToSection={scrollToSection} searchQuery={searchQuery} onSearchChange={(query) => setSearchQuery(query)} onEnterPress={() => setCurrentScrollIndex(currentScrollIndex + 1)} onChangeFilters={(filters) => setSelectedFilters(filters)} />
 
-        <LayoutGroup>
-          <ContentGrid
-            ref={contentGridRef}
-            content={filteredContent}
-            onContentClick={handleContentClick}
-            onStatusChange={handleStatusChange}
-            onRemoveContent={handleRemoveContent}
-            fromWatchlist={true}
-            focusedTitle={focusedTitle}
-            ownerPage={ownerPage}
-          />
-        </LayoutGroup>
+        {mounted && (
+          <LayoutGroup>
+            <ContentGrid
+              ref={contentGridRef}
+              content={filteredContent}
+              onContentClick={handleContentClick}
+              onStatusChange={handleStatusChange}
+              onRemoveContent={handleRemoveContent}
+              fromWatchlist={true}
+              focusedTitle={focusedTitle}
+              ownerPage={ownerPage}
+            />
+          </LayoutGroup>
+        )}
+
 
         <Suspense fallback={null}>
           <ContentDetailsModal selectedContent={selectedContent} onClose={() => setShowModal(false)} open={showModal} />
         </Suspense>
-
-        
-        <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
       </div>
     </div>

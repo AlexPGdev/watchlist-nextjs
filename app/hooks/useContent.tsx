@@ -5,6 +5,7 @@ import type { Content } from "../types/content";
 import Cookies from 'js-cookie'
 import { useAuth } from "./useAuth";
 import { useParams } from "next/navigation";
+import { useAccessToken } from "@workos-inc/authkit-nextjs/components";
 
 interface ContentContextType {
     page: {
@@ -41,6 +42,10 @@ interface ContentContextType {
     filterType: number
     loadRecommendedMovies: () => Promise<void>
     recommendations: { title: string; subtitle: string; objects: any[] }[]
+    getExtendedDetails: (id: string, type: string) => Promise<any>
+    getEpisodes: (id: string) => Promise<any>
+    getRecommendedSection: (key: string) => Promise<any>
+    setUsername: (username: string) => Promise<any>
 }
 
 function useDailyStreak(content: Content[]) {
@@ -90,7 +95,9 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const [currentFilter, setCurrentFilter] = React.useState('toWatch');
     const [filterType, setFilterType] = React.useState(0);
 
-    const { isLoggedIn, user } = useAuth();
+    const { getAccessToken } = useAccessToken();
+
+    const { token, user, isLoggedIn } = useAuth();
 
     const params = useParams();
 
@@ -142,7 +149,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 "method": "GET",
                 "headers": {
                     "Content-Type": "application/json",
-                    "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                    "Authorization": `Bearer ${token}`
                 },
             })
             .then(response => response.json())
@@ -167,6 +174,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 "method": "GET",
                 "headers": {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
             })
             .then(response => response.json())
@@ -181,19 +189,115 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         }
     }, [username])
 
+    const getExtendedDetails = async (id: string, type: string) => {
+        try {
+
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+            }
+
+            const accessToken = await getAccessToken();
+
+            if (accessToken) {
+                headers["Authorization"] = `Bearer ${accessToken}`;
+            }
+
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${id}&type=${type}`, {
+                method: "GET",
+                headers
+            })
+
+            const data = await response.json()
+
+            return data
+        } catch (error) {
+            console.error("Error loading extended details:", error)
+            throw error
+        }
+    }
+
+    const setUsername = async (username: string) => {
+        try {
+
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+            }
+
+            const accessToken = await getAccessToken();
+
+            if (accessToken) {
+                headers["Authorization"] = `Bearer ${accessToken}`;
+            }
+
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/user/set-username`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ username })
+            })
+
+            const data = await response.json()
+
+            return data
+        } catch (error) {
+            console.error("Error setting username:", error)
+            throw error
+        }
+    }
+
+    const getEpisodes = async (id: string) => {
+        try {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/content/${id}/episodes`, {
+                "method": "GET",
+                "headers": {
+                    "Content-Type": "application/json",
+                }
+            })
+
+            const data = await response.json()
+
+            return data
+        } catch (error) {
+            console.error("Error loading episodes:", error)
+            throw error
+        }
+    }
+
+    const getEpisode = async (id: string) => {
+        try {
+            const response = await fetch(`https://api.spectaer.com/watchlist/api/content/episode/${id}`, {
+                "method": "GET"
+            })
+
+            const data = await response.json()
+
+            return data
+        } catch (error) {
+            console.error("Error loading episodes:", error)
+            throw error
+        }
+    }
+
     const loadRecommendedMovies = useCallback(async () => {
         // if (!page.pageContentDTOS || page.pageContentDTOS.length === 0) return;
 
         try {
             // Fetch recommendations
+
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+            }
+
+            const accessToken = await getAccessToken();
+
+            if (accessToken) {
+                headers["Authorization"] = `Bearer ${accessToken}`;
+            }
+
             const res = await fetch(
                 `https://api.spectaer.com/watchlist/api/page-content/recommended?requestType=minimal`,
                 {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `RememberMe ${Cookies.get("rememberMeToken")}`,
-                },
+                    method: "GET",
+                    headers
                 }
             );
 
@@ -252,6 +356,24 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         }
     }, [page.pageContentDTOS, isLoggedIn]);
 
+    const getRecommendedSection = async (key: string) => {
+        const response = await fetch(`https://api.spectaer.com/watchlist/api/page-content/recommended?section=${key}&page=0&size=100`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            }
+        })
+
+        if (!response.ok) {
+            throw new Error("Failed to load recommended movies")
+        }
+
+        const data = await response.json()
+
+        return data
+    }
+
     // const filterAndSearchContent = useCallback(() => {
     //     if(content && content.length > 0) {
     //         let filtered = [...content];
@@ -273,7 +395,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                    "Authorization": `Bearer ${token}`
                 },
                 // body: JSON.stringify({ ...content, force }),
             })
@@ -294,7 +416,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                        "Authorization": `Bearer ${token}`
                     },
                     // body: JSON.stringify({ ...content, force }),
                 })
@@ -336,7 +458,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                "Authorization": `Bearer ${token}`
             }
         }).catch(err => console.error("Error removing content:", err));
     }, []);
@@ -383,7 +505,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                    "Authorization": `Bearer ${token}`
                 },
             }).catch(err => console.error("Error toggling watched status:", err));
         }
@@ -442,7 +564,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
+                    "Authorization": `Bearer ${token}`
                 },
                 // body: JSON.stringify({ ...content, force }),
             })
@@ -489,7 +611,11 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         filterContentType,
         filterType,
         loadRecommendedMovies,
-        recommendations
+        recommendations,
+        getExtendedDetails,
+        getEpisodes,
+        getRecommendedSection,
+        setUsername
     }), [
         page,
         userPage,
@@ -508,7 +634,11 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         filterContentType,
         filterType,
         loadRecommendedMovies,
-        recommendations
+        recommendations,
+        getExtendedDetails,
+        getEpisodes,
+        getRecommendedSection,
+        setUsername
     ]);
 
     return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>

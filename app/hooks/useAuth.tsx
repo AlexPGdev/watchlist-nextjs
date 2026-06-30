@@ -1,40 +1,73 @@
 "use client"
 
-import { useState, useEffect, createContext } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import Cookies from 'js-cookie';
+import { useAccessToken } from "@workos-inc/authkit-nextjs/components";
 import { useParams } from "next/navigation";
 
+interface AuthUser {
+  id: number
+  username: string
+  roles: string[]
+  createdAt: number
+  [key: string]: any
+}
+
 interface AuthContextType {
-  user: string | null
+  user: AuthUser | null
   isLoggedIn: boolean
+  token: string | null | undefined
+  profile: any | null
+  getProfile: () => Promise<void>
   login: (username: string, password: string) => Promise<void>
   signup: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  profile: any | null
-  getProfile: () => Promise<void>
+  authLoaded: boolean
 }
 
-export function useAuth() {
-  const [user, setUser] = useState<{ id: number; username: string; roles: string[]; createdAt: number; } | null>(null)
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [profile, setProfile] = useState<any | null>(null)
+  const [token, setToken] = useState<string | null | undefined>(null)
+  const [authLoaded, setAuthLoaded] = useState(false)
 
+  const { getAccessToken, loading } = useAccessToken();
   const params = useParams();
-  const username = params.user as string;
+  const username = params.user as string | undefined;
 
   useEffect(() => {
-    checkAuthStatus()
-  }, [])
+    if (!loading) {
+      const loadToken = async () => {
+        try {
+          const t = await getAccessToken();
+          setToken(t)
+        } catch (error) {
+          console.error("Failed to get access token:", error)
+          setToken(null)
+        }
+      }
+
+      void loadToken()
+    }
+  }, [loading, getAccessToken])
+
+  useEffect(() => {
+    void checkAuthStatus()
+  }, [token, loading])
 
   const checkAuthStatus = async () => {
     try {
-      // console.log()
+      if(!token) return;
+
       const response = await fetch("https://api.spectaer.com/watchlist/api/user", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
-        }
+          "Authorization": `Bearer ${token}`
+        },
       })
 
       if (response.ok) {
@@ -49,24 +82,36 @@ export function useAuth() {
       console.error("Auth check error:", error)
       setIsLoggedIn(false)
       setUser(null)
+    } finally {
+      setAuthLoaded(true)  
     }
   }
 
   const getProfile = async () => {
+    if (!username) {
+      return
+    }
+
     try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      }
+
+      const accessToken = await getAccessToken();
+
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch(`https://api.spectaer.com/watchlist/api/user/${username}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
-        }
+        headers
       })
 
       if (response.ok) {
         const data = await response.json()
         setProfile(data)
       }
-
     } catch (error) {
       console.error("Error loading profile:", error)
     }
@@ -108,7 +153,6 @@ export function useAuth() {
       throw new Error("Signup failed")
     }
 
-    // Auto-login after signup
     await login(username, password)
   }
 
@@ -126,13 +170,31 @@ export function useAuth() {
     window.location.reload()
   }
 
-  return {
-    user,
-    getProfile,
-    profile,
-    isLoggedIn,
-    login,
-    signup,
-    logout,
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoggedIn,
+        token,
+        profile,
+        getProfile,
+        login,
+        signup,
+        logout,
+        authLoaded
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider")
   }
+
+  return context
 }

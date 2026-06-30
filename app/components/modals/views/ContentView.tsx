@@ -2,7 +2,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import settings from "../../../constants/settings.json";
 import { RippleExplosion } from "../../RippleExplosion";
-import { BiCheck, BiPlus, BiX } from "react-icons/bi";
+import { BiArrowBack, BiCheck, BiChevronLeft, BiChevronRight, BiPlus, BiX } from "react-icons/bi";
 import { Content } from "../../../types/content";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
@@ -10,23 +10,29 @@ import Cookies from 'js-cookie';
 import { useAuth } from "@/app/hooks/useAuth";
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
+import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components";
+import { GoChevronRight } from "react-icons/go";
+import { ImImages } from "react-icons/im";
+import useEmblaCarousel from 'embla-carousel-react'
+
 
 interface ContentViewProps {
     info: { id: string, type: string };
     onClose?: () => void;
     onClick?: (content: any, type: string) => void;
+    onBack?: () => void;
 }
 
 const MAX_LOGO_HEIGHT = 100;
 
-export const ContentView = memo(function ContentView({ info, onClose, onClick }: ContentViewProps) {
-    const { user } = useAuth();
+export const ContentView = memo(function ContentView({ info, onClose, onClick, onBack }: ContentViewProps) {
+    const { user } = useWorkOSAuth();
 
-    const { addContent } = useContent();
+    const { addContent, getExtendedDetails, getEpisodes } = useContent();
 
     const [selectedContent, setSelectedContent] = useState<any>(null);
 
-    const [images, setImages] = useState < { backdrops: any[], posters: any[] } > ({ backdrops: [], posters: [] });
+    const [images, setImages] = useState < { backdrops: any[], posters: any[], logos: any[] } > ({ backdrops: [], posters: [], logos: [] });
     const [streamingServices, setStreamingServices] = useState < any > (null);
     const [allServices, setAllServices] = useState < any > (null);
     const [showMore, setShowMore] = useState(false);
@@ -45,7 +51,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     const SKELETON_COUNT = 6;
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    const [collection, setCollection] = useState < { name: string, poster_path: string, parts: any[] } | null > (null);
+    const [collection, setCollection] = useState < { id: number, name: string, poster_path: string, parts: any[] } | null > (null);
     const [collectionScrollable, setCollectionScrollable] = useState(false);
     const [castScrollable, setCastScrollable] = useState(false);
     const collectionScrollRef = useRef<HTMLDivElement | null>(null);
@@ -60,6 +66,11 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     const buttonRef = useRef < HTMLButtonElement | null > (null);
     const modalRef = useRef < HTMLDivElement | null > (null);
 
+    const [fullPoster, setFullPoster] = useState(false);
+    const [showImageGallery, setShowImageGallery] = useState(false);
+    const [imageCarouselIndex, setImageCarouselIndex] = useState(0);
+    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" });
+
     const router = useRouter();
 
     useEffect(() => {
@@ -68,7 +79,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
         setSelectedContent(null)
         setStreamingServices(null)
         setAllServices(null)
-        setImages({ backdrops: [], posters: [] })
+        setImages({ backdrops: [], posters: [], logos: [] })
         setCast(null)
         setCrew(null)
         setCreators([])
@@ -81,17 +92,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
 
         modalRef.current?.scrollTo({ top: 0 });
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/extended-details?id=${info.id}&type=${info.type}`, {
-            "method": "GET",
-            "headers": {
-                "Content-Type": "application/json",
-                "Authorization": `RememberMe ${Cookies.get('rememberMeToken')}`
-            }
-        })
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (data) {
+        getExtendedDetails(info.id, info.type).then(data => {
 
                 let details = data.details;
 
@@ -106,15 +107,16 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
 
                 setSelectedContent({
                     id: details.id,
-                    posterPath: details.images.posters[0]?.file_path,
-                    logoPath: details.images.logos[0]?.file_path,
+                    title: details.title,
+                    posterPath: details.poster_path,
+                    logoPath: details.images.logos[0]?.file_path || null,
                     logoAspectRatio: details.images.logos[0]?.aspect_ratio,
                     description: details.overview,
                     releaseDate: details.release_date,
                     firstAirDate: details.first_air_date,
                     lastAirDate: details.last_air_date,
                     totalSeasons: details.number_of_seasons,
-                    trailerPath: details.videos?.results[0]?.key,
+                    trailerPath: details.videos?.results?.filter((v: any) => v.type === "Trailer")[0]?.key,
                     certification: certification,
                     runtime: details.runtime,
                     genres: details.genres?.map((g: { name: string }) => g.name) || [],
@@ -133,10 +135,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                 }
 
                 if(details.number_of_seasons > 0) {
-                    fetch(`https://api.spectaer.com/watchlist/api/content/${details.id}/episodes`)
-                        .then(function (response) {
-                            return response.json();
-                        })
+                    getEpisodes(details.id)
                         .then(function (data) {
                             console.log({episodesData: data});
     
@@ -171,7 +170,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
         setSelectedContent(null)
         setStreamingServices(null)
         setAllServices(null)
-        setImages({ backdrops: [], posters: [] })
+        setImages({ backdrops: [], posters: [], logos: [] })
         setCast(null)
         setCrew(null)
         setCreators([])
@@ -212,6 +211,41 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
     }, [seasonDropdownOpen]);
 
     useEffect(() => {
+        if (!fullPoster && !showImageGallery) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setFullPoster(false);
+                setShowImageGallery(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [fullPoster, showImageGallery]);
+
+    useEffect(() => {
+        if (!emblaApi) return;
+
+        const onSelect = () => {
+            setImageCarouselIndex(emblaApi.selectedScrollSnap());
+        };
+
+        onSelect();
+        emblaApi.on("select", onSelect);
+
+        return () => {
+            emblaApi.off("select", onSelect);
+        };
+    }, [emblaApi, showImageGallery]);
+
+    // useEffect(() => {
+    //     if (!emblaApi) return;
+    //     emblaApi.reInit();
+    //     emblaApi.scrollTo(imageCarouselIndex);
+    // }, [emblaApi, imageCarouselIndex, showImageGallery]);
+
+    useEffect(() => {
         if ((episodes?.length ?? 0) > 0 && selectedSeason === null) {
             setSelectedSeason(episodes[0].seasonNumber);
         }
@@ -239,6 +273,47 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
             .replace("with ads", "")
             .replace(/\s+/g, " ")
             .trim();
+
+    const galleryItems = [
+        ...(images.posters || []).map((image: any) => ({
+            key: `poster-${image.file_path || image.id}`,
+            type: "Poster",
+            src: `https://image.tmdb.org/t/p/original/${image.file_path}`,
+        })),
+        ...(images.backdrops || []).map((image: any) => ({
+            key: `backdrop-${image.file_path || image.id}`,
+            type: "Backdrop",
+            src: `https://image.tmdb.org/t/p/original/${image.file_path}`,
+        })),
+        ...(images.logos || []).map((image: any) => ({
+            key: `logo-${image.file_path || image.id}`,
+            type: "Logo",
+            src: `https://image.tmdb.org/t/p/original/${image.file_path}`,
+        })),
+    ];
+
+    const galleryNavigationItems = galleryItems.reduce<Array<{ key: string; type: string; index: number; label?: string; isDivider?: boolean }>>((items, image, index) => {
+        const prevItem = items[items.length - 1];
+
+        if (!prevItem || prevItem.type !== image.type) {
+            items.push({
+                key: `${image.key}-divider`,
+                type: image.type,
+                index,
+                label: image.type === "Poster" ? "Posters" : image.type === "Backdrop" ? "Backdrops" : "Logos",
+                isDivider: true,
+            });
+        }
+
+        items.push({
+            key: image.key,
+            type: image.type,
+            index,
+            isDivider: false,
+        });
+
+        return items;
+    }, []);
 
     async function loadStreamingAvailability(newContent: any) {
         try {
@@ -362,19 +437,133 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                 )}
             </div>
 
+            {fullPoster && selectedContent?.posterPath && (
+                <div
+                    className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-3 sm:p-6"
+                    onClick={() => setFullPoster(false)}
+                >
+                    <button
+                        type="button"
+                        className="absolute top-4 right-4 z-10 rounded-full bg-black/60 p-2 text-white shadow-lg backdrop-blur-sm hover:bg-black/80"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setFullPoster(false);
+                        }}
+                        aria-label="Close poster preview"
+                    >
+                        <BiX size={24} className={`cursor-pointer`} />
+                    </button>
+
+                    <div className="relative flex max-h-[90vh] max-w-[95vw] items-center justify-center">
+                        <img
+                            src={`https://image.tmdb.org/t/p/original/${selectedContent.posterPath}`}
+                            alt={`${selectedContent.title} poster`}
+                            className="max-h-[90vh] max-w-[95vw] rounded-2xl object-contain shadow-2xl"
+                        />
+                    </div>
+                </div>
+            )}
+
+            {showImageGallery && galleryItems.length > 0 && (
+                <div
+                    className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 p-3 sm:p-6"
+                    onClick={() => setShowImageGallery(false)}
+                >
+                    <button
+                        type="button"
+                        className="absolute top-4 right-4 z-10 rounded-full bg-black/60 p-2 text-white shadow-lg backdrop-blur-sm hover:bg-black/80"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setShowImageGallery(false);
+                        }}
+                        aria-label="Close image gallery"
+                    >
+                        <BiX size={24} className="cursor-pointer" />
+                    </button>
+
+                    <div className="w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/70 shadow-2xl" ref={emblaRef}>
+                            <div className="flex">
+                                {galleryItems.map((image) => (
+                                    <div key={image.key} className="min-w-full flex-[0_0_100%] p-6 sm:p-6 content-center">
+                                        <img
+                                            src={image.src}
+                                            alt={`${selectedContent?.title} ${image.type}`}
+                                            className="mx-auto max-h-[75vh] rounded-2xl object-contain"
+                                        />
+                                        <p className="absolute bottom-0 w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-zinc-300">
+                                            {image.type}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-center gap-3">
+                            <button
+                                type="button"
+                                className="rounded-full cursor-pointer border border-white/10 bg-white/10 p-2 text-white backdrop-blur-sm transition hover:bg-white/20"
+                                onClick={() => emblaApi?.scrollPrev()}
+                                aria-label="Previous image"
+                            >
+                                <BiChevronLeft size={22} />
+                            </button>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {galleryNavigationItems.map((item) => (
+                                    item.isDivider ? (
+                                        <div key={item.key} className="flex items-center gap-2 px-1">
+                                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400/80">
+                                                {item.label}
+                                            </span>
+                                            <div className="h-px w-3 bg-white/20" />
+                                        </div>
+                                    ) : (
+                                        <button
+                                            key={item.key}
+                                            type="button"
+                                            className={`h-2.5 rounded-full cursor-pointer transition-all ${item.index === imageCarouselIndex ? "w-7 bg-cyan-400" : "w-2.5 bg-white/40"}`}
+                                            onClick={() => emblaApi?.scrollTo(item.index)}
+                                            aria-label={`Go to image ${item.index + 1}`}
+                                        />
+                                    )
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                className="rounded-full cursor-pointer border border-white/10 bg-white/10 p-2 text-white backdrop-blur-sm transition hover:bg-white/20"
+                                onClick={() => emblaApi?.scrollNext()}
+                                aria-label="Next image"
+                            >
+                                <BiChevronRight size={22} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div ref={modalRef} className="flex flex-col overflow-y-scroll p-5 px-5 no-scrollbar gap-2">
-                {selectedContent?.logoPath ? (
-                    <img
-                        src={`https://image.tmdb.org/t/p/w500//${selectedContent?.logoPath}`}
-                        style={{ justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(selectedContent?.logoAspectRatio).width, height: logoSize(selectedContent?.logoAspectRatio).height, marginBottom: 5 }}
-                        alt={selectedContent?.title}
-                    />
+                {selectedContent?.logoPath === null ? (
+                    <p className="text-center text-xl font-bold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>{selectedContent?.title}</p>
                 ) : (
-                    <Skeleton width={'60%'} height={"100px"} className="left-[50%] translate-x-[-50%] rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+                    selectedContent?.logoPath ? (
+                        <img
+                            src={`https://image.tmdb.org/t/p/w500//${selectedContent?.logoPath}`}
+                            style={{ justifyContent: 'center', marginLeft: 'auto', marginRight: 'auto', width: logoSize(selectedContent?.logoAspectRatio).width, height: logoSize(selectedContent?.logoAspectRatio).height, marginBottom: 5 }}
+                            alt={selectedContent?.title}
+                        />
+                    ) : (
+                        <Skeleton width={'60%'} height={"100px"} className="left-[50%] translate-x-[-50%] rounded-full" baseColor="#27272a" highlightColor="#3c3c3e" borderRadius={"1rem"} />
+                    )
                 )}
 
 
-                <button className="absolute z-10 top-3 right-3 cursor-pointer hover:scale-105 active:scale-95 transition-all bg-fuchsia-500/20 rounded-full backdrop-blur-sm" onClick={handleOnClose}>
+                <button className="absolute z-10 top-3 left-3 cursor-pointer hover:scale-105 active:scale-95 transition-all text-zinc-200 bg-zinc-800/60 shadow-inner shadow-zinc-200/30 rounded-full backdrop-blur-sm" onClick={onBack}>
+                    <BiArrowBack size={35} className="p-1" />
+                </button>
+
+                <button className="absolute z-10 top-3 right-3 cursor-pointer hover:scale-105 active:scale-95 transition-all bg-fuchsia-500/20 shadow-inner shadow-fuchsia-200/30 rounded-full backdrop-blur-sm" onClick={handleOnClose}>
                     <BiX size={35} color={`rgba(${settings.secondaryColor}, 1)`} />
                 </button>
 
@@ -433,10 +622,15 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                 </div>
 
                 {window.innerWidth > 650 ? (
-                    <div className="flex justify-center gap-2">
-                        <div className="flex w-[20%]">
-                            <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
-                        </div>
+                    <div className="flex justify-between gap-4">
+                        <button
+                            type="button"
+                            className="flex w-[20%] cursor-pointer overflow-hidden rounded-xl transition-all hover:scale-105"
+                            onClick={() => setFullPoster(true)}
+                            aria-label={`Open ${selectedContent?.title} poster in fullscreen`}
+                        >
+                            <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
+                        </button>
 
                         <div className="flex gap-2 rounded-2xl overflow-hidden w-[60%]">
                             <iframe
@@ -447,24 +641,64 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                             />
                         </div>
 
-                        <div className="flex w-[20%] ">
-                            <div className="z-2 w-full rounded-xl" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
-                                {(images && images.posters && images.posters[1]) && (
-                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
-                                )}
+                        <button
+                            type="button"
+                            className="flex w-[20%] cursor-pointer overflow-hidden rounded-lg border border-cyan-600/80 bg-blue-800/30 text-md font-bold transition-all hover:scale-105"
+                            onClick={() => {
+                                setImageCarouselIndex(0);
+                                setShowImageGallery(true);
+                            }}
+                            aria-label={`Open ${selectedContent?.title} image gallery`}
+                        >
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-2 py-3 text-center">
+                                <ImImages size={40} color={`rgba(${settings.primaryColorDark}, 1)`} />
+                                <span style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>
+                                    {images.backdrops.length + images.posters.length + images.logos.length} Images
+                                </span>
                             </div>
-                            <div className=" z-1 rounded-xl w-[80%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
-                                {(images && images.posters && images.posters[2]) && (
-                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
-                                )}
-                            </div>
+                        </button>
 
-                            <div className=" z-0 rounded-xl w-[80%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
-                                {(images && images.posters && images.posters[3]) && (
-                                    <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
-                                )}
+                        {/* <div className="flex w-[20%]">
+                            <div className="relative flex flex-col rounded-2xl overflow-hidden">
+                                <div className="flex w-full h-[65%]">
+                                    <div className="z-6 h-full aspect-[0.667] rounded-xl" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[1]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+                                    <div className=" z-5 rounded-xl h-full aspect-[0.667] -ml-[115px] scale-98" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[2]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+
+                                    <div className=" z-4 rounded-xl h-full aspect-[0.667] -ml-[115px] scale-96" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[3]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-0 left-0 flex w-full h-[65%]">
+                                    <div className="z-3 h-full aspect-[0.667] rounded-xl" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[4]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[4].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+                                    <div className=" z-2 rounded-xl h-full aspect-[0.667] -ml-[115px] scale-98" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[5]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[5].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+
+                                    <div className=" z-1 rounded-xl h-full aspect-[0.667] -ml-[115px] scale-96" style={{ boxShadow: '6px 6px 15px rgba(0, 0, 0, 0.8)' }}>
+                                        {(images && images.posters && images.posters[6]) && (
+                                            <img src={`https://image.tmdb.org/t/p/w500/${images.posters[6].file_path}`} className="w-full h-full object-cover rounded-r-xl" alt={selectedContent?.title} />
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
@@ -478,28 +712,41 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                         </div>
 
                         <div className="flex w-full justify-between">
-                            <div className="flex w-[35%]">
-                                <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
-                            </div>
+                            <button
+                                type="button"
+                                className="flex w-[35%] cursor-pointer overflow-hidden rounded-xl transition-all hover:scale-105"
+                                onClick={() => setFullPoster(true)}
+                                aria-label={`Open ${selectedContent?.title} poster in fullscreen`}
+                            >
+                                <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
+                            </button>
 
-                            <div className="flex w-[55%] ">
-                                <div className="z-2 w-[60%]" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                            <button
+                                type="button"
+                                className="flex w-[55%] cursor-pointer transition-all hover:scale-105"
+                                onClick={() => {
+                                    setImageCarouselIndex(0);
+                                    setShowImageGallery(true);
+                                }}
+                                aria-label={`Open ${selectedContent?.title} image gallery`}
+                            >
+                                <div className="z-2  rounded-xl w-[60%]" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                     {(images && images.posters && images.posters[1]) && (
                                         <img src={`https://image.tmdb.org/t/p/w500/${images.posters[1].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                     )}
                                 </div>
-                                <div className=" z-1  w-[60%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                <div className=" z-1  rounded-xl w-[60%] -ml-[70px] scale-98" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                     {(images && images.posters && images.posters[2]) && (
                                         <img src={`https://image.tmdb.org/t/p/w500/${images.posters[2].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                     )}
                                 </div>
 
-                                <div className=" z-0  w-[60%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
+                                <div className=" z-0  rounded-xl w-[60%] -ml-[70px] scale-96" style={{ boxShadow: '6px 2px 15px rgba(0, 0, 0, 0.8)' }}>
                                     {(images && images.posters && images.posters[3]) && (
                                         <img src={`https://image.tmdb.org/t/p/w500/${images.posters[3].file_path}`} className="w-full h-full object-cover rounded-xl" alt={selectedContent?.title} />
                                     )}
                                 </div>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 )}
@@ -519,7 +766,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                 <div className="flex p-1 gap-4 flex-wrap select-none">
                                     {allServices?.slice(0, showMore ? allServices?.length : 3).map((service: any) => (
                                         <a href={service.url} key={service.provider_id} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 w-16 h-16 rounded-lg cursor-pointer hover:scale-105 transition-all" style={{ color: `rgba(${settings.secondaryColor}, 1)`, boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.5)', }}>
-                                            <img src={`https://image.tmdb.org/t/p/original${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
+                                            <img src={`https://image.tmdb.org/t/p/original/${service.logo_path}`} className="w-full h-full object-cover rounded-lg" alt={service.provider_name} />
                                         </a>
                                     ))}
                                     {(allServices?.length > 3 && !showMore) && (
@@ -573,7 +820,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                         {((!isLoadingEpisodes.includes(selectedSeason as any) || isLoadingEpisodes.length === 0) ? Array.from({ length: SKELETON_COUNT }) : selectedSeasonEpisodes).map((episode: any, index: number) => (
                                             <div key={(episode && episode.id) ?? index} className="w-[500px] mr-1">
                                                 {/* onClick={() => router.push(`?episode=${episode?.id}`)} */}
-                                                <button disabled={!isLoadingEpisodes.includes(selectedSeason as any)} onClick={() => {}} className="h-[150px] aspect-3/2 text-left cursor-pointer hover:scale-105 transition-all">
+                                                <button disabled={!isLoadingEpisodes.includes(selectedSeason as any)} onClick={() => onClick && onClick({episode, selectedContent}, "episode")} className="h-[150px] aspect-3/2 text-left cursor-pointer hover:scale-105 transition-all">
                                                     {!isLoadingEpisodes.includes(selectedSeason as any) ? (
                                                         <Skeleton width={210} height={120} />
                                                     ) : (
@@ -634,7 +881,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                             return result.map((c, i) => (
                                                 <button key={c.member.id ?? c.member.name} className={`flex flex-col w-[100px] shrink-0 ${i === result.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c.member, "person")}>
                                                     <img src={`https://image.tmdb.org/t/p/w500/${c.member.profile_path}`} className="w-[100px] h-[150px] rounded-lg mb-1" alt={c.member.name} />
-                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-200">{c.member.name}</p>
+                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-300">{c.member.name}</p>
                                                     <p className="text-xs line-clamp-2 leading-none font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.characters.join(", ")}</p>
                                                 </button>
                                             ));
@@ -650,13 +897,18 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
 
                         {(collection !== null && collection?.parts?.length > 0) && (
                             <div className="relative flex flex-col text-md gap-1" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
-                                <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{collection.name}</h1>
+                                <div className="flex cursor-pointer group" onClick={() => onClick && onClick(collection, "collection")}>
+                                    <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{collection.name}</h1>
+                                    <button>
+                                        <GoChevronRight className="cursor-pointer text-cyan-500 group-hover:text-cyan-100 transition-all" size={34} />
+                                    </button>
+                                </div>
 
                                 <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                     <div className="rounded-2xl overflow-hidden">
                                         <div ref={collectionScrollRef} className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
                                             {collection?.parts?.map((c: any, i: number) => (
-                                                <div key={c.id} className={`flex flex-col w-[100px] shrink-0 ${i === collection.parts.length - 1 ? "mr-2" : ""} cursor-pointer hover:scale-105 transition-all`} onClick={() => router.push(`?${info.type}=${c.id}`)}>
+                                                <div key={c.id} className={`flex flex-col w-[100px] shrink-0 ${i === collection.parts.length - 1 ? "mr-2" : ""} cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c, "movie")}>
                                                     <img src={`https://image.tmdb.org/t/p/w500/${c.poster_path}`} className="w-[100px] h-[150px] rounded-lg mb-1" alt={c.title} />
                                                     <p className="text-sm font-bold line-clamp-2 text-zinc-200 ">{c.title}</p>
                                                     <p className="text-xs line-clamp-2 leading-none font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.release_date?.substring(0, 4)}</p>
@@ -770,10 +1022,10 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                                         key={c.id ?? c.tmdbId ?? c.title}
                                         className="flex flex-col gap-1 rounded-lg w-[33%] lg:w-full ml-auto mr-auto cursor-pointer hover:scale-105 transition-all p-2"
                                         style={{ color: `rgba(${settings.secondaryColor}, 1)`, }}
-                                        onClick={() => router.push(`?${info.type}=${c.id}`)}
+                                        onClick={() => onClick && onClick(c, info.type)}
                                         // onClick={() => onClick && onClick(c, "movie")}
                                     >
-                                        <img src={`https://image.tmdb.org/t/p/original/${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
+                                        <img src={`https://image.tmdb.org/t/p/w500/${c.poster_path}`} className="w-full h-full object-cover rounded-lg" alt={c.title} />
 
                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>{c.title}</p>
                                         <p className="text-sm font-bold line-clamp-2 text-center" style={{ color: `rgba(${settings.secondaryColor}, 1)` }}>{c.release_date?.substring(0, 4)}</p>
@@ -793,13 +1045,13 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick }:
                     className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
                     style={{ color: `rgba(${settings.primaryColor}, 1)` }}
                     onClick={() => handleAddWatchlist()}
-                    disabled={(user === null || inWatchlist) ? true : false}
+                    disabled={(!user || inWatchlist) ? true : false}
                 >
                     <span className="inline-block content-center text-center transition-transform duration-300 ">
                         {inWatchlist ? <BiCheck size={20} /> : <BiPlus size={20} />}
                     </span>
                     <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
-                        {user === null ? `Login to add to your watchlist` : inWatchlist ? "In your watchlist" : "Add to watchlist"}
+                        {!user ? `Login to add to your watchlist` : inWatchlist ? "In your watchlist" : "Add to watchlist"}
                     </span>
                 </button>
             </div>

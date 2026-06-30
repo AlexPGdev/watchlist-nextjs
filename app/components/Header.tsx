@@ -3,19 +3,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import SvgComponent from "../components/HomeIcon";
 import settings from "../constants/settings.json";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components";
+import { signOutAction } from "@/app/auth/actions";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../hooks/useAuth";
 
 interface HeaderProps {
-    onOpen: () => void;
     onOpenSearchResult: (result: any) => void;
 }
 
-export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }: HeaderProps) {
+export const Header = React.memo(function Header({ onOpenSearchResult }: HeaderProps) {
 
     const router = useRouter();
 
-    const { isLoggedIn, user, logout } = useAuth();
+    const { user: customUser, authLoaded } = useAuth();
+
+    const { user, loading, refreshAuth } = useWorkOSAuth();
+    const [mounted, setMounted] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const searchRef = useRef<HTMLDivElement | null>(null);
@@ -24,6 +28,12 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
     const [showResults, setShowResults] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [yearFilter, setYearFilter] = useState("");
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const authContentReady = mounted && !loading;
 
     const getResultTitle = (result: any) => {
         return result.username ?? result.title ?? result.name ?? "Unknown";
@@ -152,7 +162,7 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                                         <div className="flex gap-2 w-full h-20 items-center">
                                             <div className="w-15">
                                                 <img
-                                                    src={result?.mediaType?.toLowerCase() === "person" ? `https://image.tmdb.org/t/p/w500/${result.profile_path}` : result.poster_path === undefined ? `https://alexpgdev.com/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
+                                                    src={result?.mediaType?.toLowerCase() === "person" ? `https://image.tmdb.org/t/p/w500/${result.profile_path}` : result.poster_path === undefined ? `/peepoHey.gif` :`https://image.tmdb.org/t/p/w500/${result.poster_path}`} 
                                                     className="w-full h-full object-cover rounded-lg" 
                                                     alt={result.title}
                                                     draggable={false}
@@ -178,17 +188,19 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                     )}
                 </div>
 
-
-
                 <a href="/explore" className="text-cyan-400 text-lg hover:text-cyan-500 hover:underline transition-all duration-300">
                     Explore
                 </a>
 
-                {!isLoggedIn ? (
-                    <button 
-                        className="p-3 px-6 uppercase rounded-full bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all" 
+                {loading ? (
+                    <div className="h-10 w-20 animate-pulse rounded-full bg-cyan-800/50" />
+                ) : !authContentReady || !authLoaded ? (
+                    <div className="h-10 w-20 animate-pulse rounded-full bg-cyan-800/50" />
+                ) : !user ? (
+                    <button
+                        className="p-3 px-6 uppercase rounded-full bg-cyan-800/80 font-bold tracking-widest text-sm shadow-inner shadow-cyan-200/30 cursor-pointer hover:scale-105 transition-all"
                         style={{color: `rgba(${settings.primaryColor}, 1)`}}
-                        onClick={onOpen}
+                        onClick={() => void refreshAuth({ ensureSignedIn: true })}
                     >
                         Login
                     </button>
@@ -200,28 +212,25 @@ export const Header = React.memo(function Header({ onOpen, onOpenSearchResult }:
                             className="inline-flex items-center gap-2 font-bold text-base p-1 rounded-2xl cursor-pointer hover:bg-cyan-800 transition-all"
                             style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}
                         >
-                            {user?.username}
+                            {customUser?.username}
                         </button>
 
                         {menuOpen && (
                             <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50 overflow-hidden">
                                 <a
-                                    href={`/user/${user?.username}`}
+                                    href={`/user/${customUser?.username}`}
                                     className="block w-full px-4 py-3 text-left text-sm text-cyan-300 cursor-pointer hover:bg-cyan-900/80 transition-colors"
                                     onClick={() => setMenuOpen(false)}
                                 >
                                     Profile
                                 </a>
-                                <button
-                                    type="button"
-                                    className="block w-full px-4 py-3 text-left text-sm text-fuchsia-300 cursor-pointer hover:bg-fuchsia-900/80 transition-colors"
-                                    onClick={async () => {
-                                        setMenuOpen(false);
-                                        await logout();
-                                    }}
-                                >
-                                    Sign out
-                                </button>
+                                    <button
+                                        type="submit"
+                                        className="block w-full px-4 py-3 text-left text-sm text-fuchsia-300 cursor-pointer hover:bg-fuchsia-900/80 transition-colors"
+                                        onClick={() => {signOutAction(); setMenuOpen(false)}}
+                                    >
+                                        Sign out
+                                    </button>
                             </div>
                         )}
                     </div>
