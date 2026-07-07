@@ -449,6 +449,8 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     }
 
     const removeContent = useCallback(async (id: number) => {
+        const accessToken = await getAccessToken();
+
         setPage(prev => ({
             ...prev,
             pageContentDTOS: prev.pageContentDTOS.filter(m => m.id !== id)
@@ -458,12 +460,15 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${accessToken}`
             }
         }).catch(err => console.error("Error removing content:", err));
     }, []);
 
     const toggleWatched = useCallback(async (id: number) => {
+
+        const accessToken = await getAccessToken();
+
         let type: "started" | "watched" | undefined;
 
         setPage(prev => {
@@ -505,7 +510,7 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    "Authorization": `Bearer ${accessToken}`
                 },
             }).catch(err => console.error("Error toggling watched status:", err));
         }
