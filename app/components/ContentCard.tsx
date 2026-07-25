@@ -77,7 +77,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
     const cardContent = (
         <div className="flex rounded-2xl h-full shadow-inner shadow-zinc-200/30 cursor-pointer transform-gpu transition-all will-change-transform overflow-hidden" onClick={() => onClick && onClick(content)} onPointerDown={handleCardPointerDown} onPointerUp={handlePointerUp}>
             <div className={`relative flex flex-col p-4`}>
-                
+            
                 <div className="absolute w-full h-full top-0 left-0 rounded-xl overflow-hidden -z-10">
                     <img
                         src={`${content.posterPath}`.includes('https://image.tmdb.org') ? content.posterPath : `https://image.tmdb.org/t/p/w500/${content?.posterPath}`}
@@ -131,6 +131,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
                         )}
 
                         <div className="absolute w-full h-20 bottom-0 bg-gradient-to-t from-black to-transparent"></div>
+                        
                         <div className="flex flex-col absolute bottom-2 left-2 gap-1 ">
                             {renderTitleWithHighlight()}
                             <div className="flex gap-1 flex-nowrap">

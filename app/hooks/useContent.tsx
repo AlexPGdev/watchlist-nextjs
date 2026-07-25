@@ -428,17 +428,23 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
             // loadContent()
 
-            setPage(prev => ({
-                ...prev,
-                pageContentDTOS: [...prev.pageContentDTOS, addedContent]
-            }));
+            let pageContentDTOSadded;
+
+            setPage(prev => {
+                pageContentDTOSadded = [...prev.pageContentDTOS, addedContent]
+                return {
+                    ...prev,
+                    pageContentDTOS: [...prev.pageContentDTOS, addedContent]
+                }
+            })
+
+            console.log({pageContentDTOSadded})
 
             // loadExternalRatings(addedContent.tmdbId, addedContent.title, mediaType, addedContent.id, onRatingsUpdated)
 
             // if(addedContent.imdbRating === 0 || addedContent.rtRating === null) {
             //     loadExtraDetails(addedContent.id, addedContent.tmdbId, addedContent.posterPath, onRatingsUpdated)
             // }
-            // loadAmbientColor(addedContent.id, addedContent.posterPath)
 
             // loadExternalRatings(addedContent.imdbId, addedContent.id, onRatingsUpdated)
 
@@ -451,12 +457,22 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
     const removeContent = useCallback(async (id: number) => {
         const accessToken = await getAccessToken();
 
-        setPage(prev => ({
-            ...prev,
-            pageContentDTOS: prev.pageContentDTOS.filter(m => m.id !== id)
-        }));
+        let contentToRemove: any = null;
 
-        fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}`, {
+        console.log({pageContentDTOS: page.pageContentDTOS})
+
+        setPage(prev => {
+            contentToRemove = prev.pageContentDTOS.find(c => c.id === id) || prev.pageContentDTOS.find(c => c.tmdbId === id);
+
+            return {
+                ...prev,
+                pageContentDTOS: prev.pageContentDTOS.filter(m => m.id !== contentToRemove.id)
+            }
+        });
+
+        console.log({contentToRemove})
+
+        fetch(`https://api.spectaer.com/watchlist/api/page-content/${contentToRemove.id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
@@ -470,22 +486,36 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         const accessToken = await getAccessToken();
 
         let type: "started" | "watched" | undefined;
+        let contentToToggle: any = null;
 
         setPage(prev => {
-            const contentToToggle = prev.pageContentDTOS.find(c => c.id === id);
+            contentToToggle = prev.pageContentDTOS.find(c => c.id === id) || prev.pageContentDTOS.find(c => c.tmdbId === id);
             if (!contentToToggle) return prev;
 
             type = (() => {
-                if (contentToToggle.contentType === "tv_series" && !contentToToggle.started && !contentToToggle.watched) {
+                if(contentToToggle.watched) {
+                    return "watched";
+                } else if (contentToToggle.contentType === "tv_series" && !contentToToggle.started && !contentToToggle.watched) {
                     return "started";
                 } else if (contentToToggle.contentType === "movie" || contentToToggle.started) {
                     return "watched";
                 }
             })();
 
+
             if (!type) return prev;
 
-            const index = prev.pageContentDTOS.findIndex(m => m.id === id);
+            console.log(prev.pageContentDTOS.findIndex(m => m.id === id))
+            console.log(prev.pageContentDTOS.findIndex(m => m.tmdbId === id))
+
+            let index;
+
+            index = prev.pageContentDTOS.findIndex(m => m.id === id);
+
+            if(index === -1) {
+                index = prev.pageContentDTOS.findIndex(m => m.tmdbId === id);
+            }
+
             if (index === -1) return prev;
             const updated = [...prev.pageContentDTOS];
             if (type === "started") {
@@ -502,11 +532,15 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
                     toggled: true 
                 };
             }
+
             return { ...prev, pageContentDTOS: updated };
         });
 
+        console.log({type})
+
         if (type) {
-            fetch(`https://api.spectaer.com/watchlist/api/page-content/${id}/${type === "started" ? "start" : "watch"}`, {
+            console.log({type})
+            fetch(`https://api.spectaer.com/watchlist/api/page-content/${contentToToggle.id}/${type === "started" ? "start" : "watch"}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
