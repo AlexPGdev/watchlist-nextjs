@@ -21,6 +21,7 @@ export default function Home() {
     toggleWatched,
     removeContent,
     setUsername,
+    getExtendedDetails,
   } = useContent();
 
   const { user, loading, refreshAuth } = useWorkOSAuth();

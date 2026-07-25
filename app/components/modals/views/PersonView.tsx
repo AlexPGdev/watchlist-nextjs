@@ -4,6 +4,7 @@ import settings from "../../../constants/settings.json";
 import { BiArrowBack, BiX } from "react-icons/bi";
 // import { Person } from "../../../types/person";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useContent } from "@/app/hooks/useContent";
 
 interface PersonViewProps {
     info: { id: string, type: string };
@@ -16,10 +17,13 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 export const PersonView = memo(function PersonView({ onClick, info, onClose, onBack }: PersonViewProps) {
 
+    const { getExtendedDetails } = useContent();
+
     const [ person, setPerson ] = useState<any>(null);
     const [ images, setImages ] = useState<any[]>([]);
     const [ cast, setCast ] = useState<any[]>([]);
     const [ crew, setCrew ] = useState<any[]>([]);
+    const [ rawUpcoming, setRawUpcoming ] = useState<any[]>([]);
     const [ upcoming, setUpcoming ] = useState<any[]>([]);
     const [ showMore, setShowMore ] = useState(false);
     const [ biographyShowMore, setBiographyShowMore ] = useState(false);
@@ -44,9 +48,36 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                 setImages(data.details.images)
                 setCast(data.details.combined_credits.cast)
                 setCrew(data.details.combined_credits.crew)
+                setRawUpcoming(data.upcoming)
                 setUpcoming(data.upcoming)
             })
     }, [info.id, info.type])
+
+    useEffect(() => {
+        if (!person) return;
+        if (person?.known_for_department !== "Directing") return;
+        if (!rawUpcoming || rawUpcoming.length === 0) return;
+
+        const filterUpcoming = async () => {
+            const directed = await Promise.all(
+                rawUpcoming.map(async (item) => {
+                    try {
+                        const data = await getExtendedDetails(item.id, "movie");
+                        if (!data || !data.details) return null;
+
+                        const directedCrew = data.details.credits?.crew?.find((c: any) => c.id === person.id && c.job === "Director");
+                        return directedCrew ? item : null;
+                    } catch (error) {
+                        return null;
+                    }
+                })
+            );
+
+            setUpcoming(directed.filter(Boolean));
+        };
+
+        filterUpcoming();
+    }, [person, rawUpcoming, getExtendedDetails]);
 
     useEffect(() => {
         if (!fullPoster) return;
@@ -179,7 +210,12 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                 <p className="text-md font-semibold" style={{ color: `rgba(${settings.primaryColor}, 1)` }}>
                                     {person?.birthday && (
                                         (() => {
-                                            const today = new Date();
+                                            let today = new Date();
+
+                                            if(person?.deathday) {
+                                                today = new Date(person?.deathday);
+                                            }
+
                                             const dob = new Date(person?.birthday);
 
                                             let age = today.getFullYear() - dob.getFullYear();
@@ -366,7 +402,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                         <div ref={castScrollRef} className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">                                          
                                             {crew && crew.length > 0 && (
                                                 crew.filter(c => c.job === "Director").sort((a, b) => b.popularity - a.popularity).map((c, i) => (
-                                                    <button key={i} className={`flex flex-col w-[100px] shrink-0 ${i === upcoming.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c, c.mediaType)}>
+                                                    <button key={i} className={`flex flex-col w-[100px] shrink-0 ${(upcoming && i === upcoming.length - 1) ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c, c.mediaType)}>
                                                         <div className="flex rounded-lg shrink-0 overflow-hidden">
                                                             <img src={`https://image.tmdb.org/t/p/original/${c?.poster_path}`} className="w-full h-full object-cover" alt={c?.title || c?.name} />
                                                         </div>
@@ -384,7 +420,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                     </div>                             
                                 </div>
 
-                                {upcoming.length > 0 && (
+                                {upcoming && upcoming.length > 0 && (
                                     <>                                    
                                         <h1 className="uppercase text-md font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Upcoming</h1>
                                         <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>

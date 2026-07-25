@@ -2,7 +2,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import settings from "../../../constants/settings.json";
 import { RippleExplosion } from "../../RippleExplosion";
-import { BiArrowBack, BiCheck, BiChevronLeft, BiChevronRight, BiPlus, BiX } from "react-icons/bi";
+import { BiArrowBack, BiCheck, BiChevronLeft, BiChevronRight, BiPlus, BiTrash, BiX } from "react-icons/bi";
 import { Content } from "../../../types/content";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContent } from "@/app/hooks/useContent";
@@ -14,7 +14,9 @@ import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components"
 import { GoChevronRight } from "react-icons/go";
 import { ImImages } from "react-icons/im";
 import useEmblaCarousel from 'embla-carousel-react'
-
+import CountryList from "country-list-with-dial-code-and-flag";
+import { BsEye, BsEyeSlash } from "react-icons/bs";
+import { HiOutlinePlayCircle } from "react-icons/hi2";
 
 interface ContentViewProps {
     info: { id: string, type: string };
@@ -23,12 +25,14 @@ interface ContentViewProps {
     onBack?: () => void;
 }
 
+const countries = CountryList.getAll();
+
 const MAX_LOGO_HEIGHT = 100;
 
 export const ContentView = memo(function ContentView({ info, onClose, onClick, onBack }: ContentViewProps) {
     const { user } = useWorkOSAuth();
 
-    const { addContent, getExtendedDetails, getEpisodes } = useContent();
+    const { addContent, getExtendedDetails, getEpisodes, toggleWatched, removeContent } = useContent();
 
     const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -48,6 +52,10 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
     const [selectedSeasonEpisodes, setSelectedSeasonEpisodes] = useState<any[]>([]);
     const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
     const seasonDropdownRef = useRef<HTMLDivElement | null>(null);
+    const [selectedRegion, setSelectedRegion] = useState<{ code: string; name: string; flag: string } | null>(null);
+    const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
+    const [regionSearch, setRegionSearch] = useState("");
+    const regionDropdownRef = useRef<HTMLDivElement | null>(null);
     const SKELETON_COUNT = 6;
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -62,9 +70,15 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
 
     const [inWatchlist, setInWatchlist] = useState(false);
+    const [watched, setWatched] = useState(false);
+    const [started, setStarted] = useState(false);
 
     const buttonRef = useRef < HTMLButtonElement | null > (null);
+    const statusButtonRef = useRef < HTMLButtonElement | null > (null);
+    const removeButtonRef = useRef < HTMLButtonElement | null > (null);
     const modalRef = useRef < HTMLDivElement | null > (null);
+
+    const [rippleColor, setRippleColor] = useState("rgba(0, 255, 0, 0.4)");
 
     const [fullPoster, setFullPoster] = useState(false);
     const [showImageGallery, setShowImageGallery] = useState(false);
@@ -79,6 +93,8 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
         setSelectedContent(null)
         setStreamingServices(null)
         setAllServices(null)
+        setSelectedRegion(null)
+        setRegionDropdownOpen(false)
         setImages({ backdrops: [], posters: [], logos: [] })
         setCast(null)
         setCrew(null)
@@ -97,6 +113,8 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                 let details = data.details;
 
                 setInWatchlist(data.inWatchlist);
+                setWatched(data.watched);
+                setStarted(data.started);
 
                 const certification = details.release_dates?.results
                     ?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")
@@ -104,6 +122,15 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                     ?.find((rd: { certification: string }) => rd.certification?.trim())
                     ?.certification ||
                     details.content_ratings?.results?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")?.rating
+
+
+                let contentType = null;
+
+                if(details.runtime > 0) {
+                    contentType = "movie";
+                } else if(details.number_of_episodes > 0 || details.number_of_seasons > 0) {
+                    contentType = "tv_series";
+                }
 
                 setSelectedContent({
                     id: details.id,
@@ -120,6 +147,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                     certification: certification,
                     runtime: details.runtime,
                     genres: details.genres?.map((g: { name: string }) => g.name) || [],
+                    contentType: contentType
                 })
 
                 setImages(details.images)
@@ -209,6 +237,17 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
         window.addEventListener('pointerdown', handleClickOutside);
         return () => window.removeEventListener('pointerdown', handleClickOutside);
     }, [seasonDropdownOpen]);
+
+    useEffect(() => {
+        const handleClickOutsideRegion = (event: MouseEvent) => {
+            if (regionDropdownOpen && regionDropdownRef.current && !regionDropdownRef.current.contains(event.target as Node)) {
+                setRegionDropdownOpen(false);
+            }
+        };
+
+        window.addEventListener('pointerdown', handleClickOutsideRegion);
+        return () => window.removeEventListener('pointerdown', handleClickOutsideRegion);
+    }, [regionDropdownOpen]);
 
     useEffect(() => {
         if (!fullPoster && !showImageGallery) return;
@@ -315,36 +354,43 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
         return items;
     }, []);
 
-    async function loadStreamingAvailability(newContent: any) {
+    async function loadStreamingAvailability(newContent: any, regionCode?: string) {
         try {
+            const response = await fetch("https://ipwho.is/");
+            const ipData = await response.json();
+
+            const effectiveRegionCode = (regionCode || selectedRegion?.code || ipData?.country_code || "US").toUpperCase();
+            const region = countries.find((option) => option.code === effectiveRegionCode) || countries[0];
+            setSelectedRegion(region);
+
             const response1 = await fetch(
-                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id
-                }&type=${`${(info.type)}`.toLowerCase()}`
+                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id}&type=${`${(info.type)}`.toLowerCase()}`
             );
 
             const jwData = await response1.json();
+            const countryData = jwData[region.code] || jwData[region.code.toUpperCase()] || {};
 
             let allServices: any[] = [];
 
-            if (jwData.DE?.flatrate) {
-                jwData.DE.flatrate.sort(
+            if (countryData.flatrate) {
+                countryData.flatrate.sort(
                     (a: any, b: any) => a.display_priority - b.display_priority
                 );
-                allServices.push(...jwData.DE.flatrate);
+                allServices.push(...countryData.flatrate);
             }
 
-            if (jwData.DE?.buy) {
-                jwData.DE.buy.sort(
+            if (countryData.buy) {
+                countryData.buy.sort(
                     (a: any, b: any) => a.display_priority - b.display_priority
                 );
-                allServices.push(...jwData.DE.buy);
+                allServices.push(...countryData.buy);
             }
 
-            if (jwData.DE?.rent) {
-                jwData.DE.rent.sort(
+            if (countryData.rent) {
+                countryData.rent.sort(
                     (a: any, b: any) => a.display_priority - b.display_priority
                 );
-                allServices.push(...jwData.DE.rent);
+                allServices.push(...countryData.rent);
             }
 
             const seen = new Set < number > ();
@@ -355,10 +401,12 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
             });
 
             const response2 = await fetch(
-                `https://imdb.iamidiotareyoutoo.com/justwatch?q=${newContent?.title}&L=DE_de`
+                `https://imdb.iamidiotareyoutoo.com/justwatch?q=${encodeURIComponent(newContent?.title)}&L=EN_${region.code}`
             );
 
             const imdbData = await response2.json();
+
+            console.log({imdbData})
 
             const offers =
                 imdbData.description
@@ -409,6 +457,79 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
             });
         }
 
+        setRippleColor("rgba(0, 255, 0, 0.4)")
+
+        setShowRipple(false);
+        setRippleKey((prev) => prev + 1);
+
+        window.setTimeout(() => {
+            setShowRipple(true);
+        }, 0);
+    }
+
+    const handleStatusChange = () => {
+
+        if(!watched && (!started && selectedContent.contentType === 'tv_series')) {
+            setStarted(true)
+        }
+
+        if(!watched && (started && selectedContent.contentType === 'tv_series')) {
+            setStarted(true)
+            setWatched(true)
+        }
+
+        if(!watched && selectedContent.contentType === 'movie') {
+            setWatched(true)
+        }
+
+        if(watched) {
+            setWatched(false)
+            setStarted(false)
+        }
+        
+        if(selectedContent !== null) {
+            console.log({selectedContent})
+            toggleWatched(selectedContent.id)
+        }
+
+        const buttonRect = buttonRef.current?.getBoundingClientRect();
+        const modalRect = modalRef.current?.getBoundingClientRect();
+
+        if (buttonRect && modalRect) {
+            setButtonPosition({
+                x: buttonRect.left - modalRect.left + buttonRect.width / 2,
+                y: buttonRect.top - modalRect.top + buttonRect.height / 2,
+            });
+        }
+
+        setRippleColor("rgba(0, 150, 255, 0.4)")
+
+        setShowRipple(false);
+        setRippleKey((prev) => prev + 1);
+
+        window.setTimeout(() => {
+            setShowRipple(true);
+        }, 0);
+    }
+
+    const handleRemove = () => {
+        removeContent(selectedContent.id)
+        setInWatchlist(false)
+        setWatched(false)
+        setStarted(false)
+
+        const buttonRect = removeButtonRef.current?.getBoundingClientRect();
+        const modalRect = modalRef.current?.getBoundingClientRect();
+
+        if (buttonRect && modalRect) {
+            setButtonPosition({
+                x: buttonRect.left - modalRect.left + buttonRect.width / 2,
+                y: buttonRect.top - modalRect.top + buttonRect.height / 2,
+            });
+        }
+
+        setRippleColor("rgba(218, 0, 87, 0.4)")
+
         setShowRipple(false);
         setRippleKey((prev) => prev + 1);
 
@@ -426,7 +547,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                 originY={buttonPosition.y}
                 containerWidth={modalRef.current?.offsetWidth}
                 containerHeight={modalRef.current?.offsetHeight}
-                color="rgba(0, 255, 0, 0.4)"
+                color={rippleColor}
                 duration={1500}
                 onComplete={() => setShowRipple(false)}
             />
@@ -761,7 +882,63 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                         </div>
 
                         <div className="flex flex-col text-zinc-200 text-md gap-2" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h1 className="text-xl font-bold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Available on</h1>
+                            <div className="relative" ref={regionDropdownRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setRegionDropdownOpen((v) => !v)}
+                                    className="flex items-center gap-2 rounded-2xl border border-cyan-700 bg-cyan-900/20 px-3 py-2 text-sm font-semibold text-cyan-100 cursor-pointer hover:scale-105 transition-all"
+                                    aria-label="Select region"
+                                >
+                                    <span>{selectedRegion?.flag ?? "🌎"}</span>
+                                    <span>{selectedRegion?.name ?? "Select region"}</span>
+                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </button>
+                                {regionDropdownOpen && (
+                                    <div className="absolute right-0 z-20 mt-2 min-w-[180px] max-h-72 overflow-hidden rounded-2xl border border-cyan-800 bg-[#06050d] shadow-xl shadow-cyan-900/50">
+                                        <div className="px-4 py-3">
+                                            <input
+                                                type="text"
+                                                value={regionSearch}
+                                                onChange={(event) => setRegionSearch(event.target.value)}
+                                                placeholder="Search countries"
+                                                autoComplete="off"
+                                                className="w-full rounded-2xl border border-cyan-700 bg-[#071019] px-3 py-2 text-sm text-white outline-none placeholder:text-cyan-400"
+                                            />
+                                        </div>
+                                        <div className="max-h-56 overflow-y-auto">
+                                            {countries
+                                                .filter((region) => !region.secondary)
+                                                .filter((region) => region.name.toLowerCase().includes(regionSearch.toLowerCase()))
+                                                .map((region, index) => (
+                                                    <button
+                                                        key={region.code + index}
+                                                        type="button"
+                                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-all cursor-pointer ${selectedRegion?.code === region.code ? "bg-cyan-900/80 text-white" : "text-cyan-200 hover:bg-cyan-900/70"}`}
+                                                        onClick={() => {
+                                                            setSelectedRegion(region);
+                                                            setRegionDropdownOpen(false);
+                                                            setRegionSearch("");
+                                                            if (selectedContent) {
+                                                                loadStreamingAvailability(selectedContent, region.code);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <span>{region.flag}</span>
+                                                        <span>{region.name}</span>
+                                                    </button>
+                                                ))}
+                                            {countries.filter((region) => !region.secondary).filter((region) => region.name.toLowerCase().includes(regionSearch.toLowerCase())).length === 0 && (
+                                                <div className="px-4 py-3 text-sm text-cyan-300">No countries found</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                             {streamingServices && allServices?.length > 0 ? (
                                 <div className="flex p-1 gap-4 flex-wrap select-none">
                                     {allServices?.slice(0, showMore ? allServices?.length : 3).map((service: any) => (
@@ -1039,21 +1216,59 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
             </div>
 
             <div className="absolute bottom-10 w-full flex gap-2 justify-center z-10">
-                <button
-                    id="add-to-watchlist"
-                    ref={buttonRef}
-                    className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-3 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
-                    style={{ color: `rgba(${settings.primaryColor}, 1)` }}
-                    onClick={() => handleAddWatchlist()}
-                    disabled={(!user || inWatchlist) ? true : false}
-                >
-                    <span className="inline-block content-center text-center transition-transform duration-300 ">
-                        {inWatchlist ? <BiCheck size={20} /> : <BiPlus size={20} />}
-                    </span>
-                    <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
-                        {!user ? `Login to add to your watchlist` : inWatchlist ? "In your watchlist" : "Add to watchlist"}
-                    </span>
-                </button>
+                    <div className="flex justify-between gap-2">
+                        <button
+                            id="mark-as-watched"
+                            ref={buttonRef}
+                            className="flex group relative overflow-hidden rounded-2xl bg-cyan-800/80 px-10 py-1.5 text-lg shadow-inner shadow-cyan-200/30 backdrop-blur-sm cursor-pointer transition-all duration-600 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
+                            style={{ color: `rgba(${settings.primaryColor}, 1)` }}
+                            onClick={inWatchlist ? handleStatusChange : handleAddWatchlist}
+                            disabled={!user ? true : false}
+                        >
+                            <span className="inline-block content-center text-center transition-transform duration-600 ">
+                                {!inWatchlist ? (
+                                    <>
+                                        <BiPlus size={20} />
+                                    </>
+                                ) : (
+                                    watched ? (
+                                        <BsEyeSlash size={25} className="ml-auto mr-auto" />
+                                    ) : (
+                                        (selectedContent !== null && selectedContent.contentType === 'movie') || (started && !watched) ? (
+                                            <BsEye size={25} className="ml-auto mr-auto" />
+                                        ) : (
+                                            <HiOutlinePlayCircle size={25} className="ml-auto mr-auto" />
+                                        )
+                                    )
+                                )}
+                            </span>
+                            <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-600 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
+                                {!inWatchlist ? (
+                                    !user ? `Login to add to your watchlist` : "Add to watchlist"
+                                ) : (
+                                    `Mark as ${!watched ? (!started && (selectedContent !== null && selectedContent.contentType) === 'tv_series' ? "started" : "watched") : "unwatched"}`
+                                )}
+                            </span>
+                        </button>
+
+                        {inWatchlist && selectedContent !== null && (
+                            <button
+                                id="remove-from-watchlist"
+                                ref={removeButtonRef}
+                                className="flex group relative overflow-hidden rounded-2xl bg-fuchsia-800/80 px-3 py-1.5 text-lg shadow-inner shadow-fuchsia-200/30 backdrop-blur-sm cursor-pointer transition-all duration-300 hover:px-4 active:scale-95 disabled:opacity-60 disabled:cursor-default"
+                                style={{ color: `rgba(${settings.secondaryColor}, 1)` }}
+                                onClick={handleRemove}
+                            >
+                                <span className="inline-block content-center text-center transition-transform duration-600 ">
+                                    <BiTrash size={25} />
+                                </span>
+                                <span className="ml-0 inline-block max-w-0 overflow-hidden whitespace-nowrap transition-all duration-600 group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100 opacity-0">
+                                    Remove from watchlist
+                                </span>
+                            </button>
+                        )}
+                    </div>
+
             </div>
         </>
     )

@@ -17,7 +17,7 @@ export const RippleExplosion: React.FC<RippleExplosionProps> = ({
   originY,
   containerWidth,
   containerHeight,
-  color = 'rgba(0, 255, 0, 0.6)',
+  color,
   duration = 1000,
   onComplete,
 }) => {
