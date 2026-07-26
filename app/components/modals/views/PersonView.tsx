@@ -32,6 +32,11 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
     const [castScrollable, setCastScrollable] = useState(false);
     const castScrollRef = useRef<HTMLDivElement | null>(null);
 
+    /*
+        MATCH THE WEB VERSION AND FIX THE ISSUES:
+            - Make the buttons on the modal change if the movie is in watchlist or not
+    */
+
 
     useEffect(() => {
         if (!info.id || !info.type) return
@@ -202,7 +207,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                     +{[...new Set(crew.filter(c => c.job !== "Thanks").map(c => c.job))].length - 2} more
                                 </button>
                             )}
-                        </div>
+                        </div>``
 
                         <div className="flex gap-6 justify-center mt-4 max-w-3/4 flex-wrap ml-auto mr-auto">
                             <div className="flex flex-col text-center">

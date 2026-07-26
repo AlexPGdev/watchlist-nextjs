@@ -35,4 +35,5 @@ export interface Content {
     type: string
     media_type: string
     nextEpisode: number
+    customPoster: string | null
 }

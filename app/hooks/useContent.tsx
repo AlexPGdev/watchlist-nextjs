@@ -46,6 +46,7 @@ interface ContentContextType {
     getEpisodes: (id: string) => Promise<any>
     getRecommendedSection: (key: string) => Promise<any>
     setUsername: (username: string) => Promise<any>
+    setPoster: (id: number, image: any) => Promise<void>
 }
 
 function useDailyStreak(content: Content[]) {
@@ -459,8 +460,6 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
 
         let contentToRemove: any = null;
 
-        console.log({pageContentDTOS: page.pageContentDTOS})
-
         setPage(prev => {
             contentToRemove = prev.pageContentDTOS.find(c => c.id === id) || prev.pageContentDTOS.find(c => c.tmdbId === id);
 
@@ -549,6 +548,49 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
             }).catch(err => console.error("Error toggling watched status:", err));
         }
     }, []);
+
+    const setPoster = useCallback(async (id: number, image: any) => {
+
+        const accessToken = await getAccessToken();
+
+        let content: any = null;
+
+        setPage(prev => {
+            content = prev.pageContentDTOS.find(c => c.id === id) || prev.pageContentDTOS.find(c => c.tmdbId === id);
+
+            console.log({content})
+
+            let index;
+
+            index = prev.pageContentDTOS.findIndex(m => m.id === id);
+
+            if(index === -1) {
+                index = prev.pageContentDTOS.findIndex(m => m.tmdbId === id);
+            }
+
+            if (index === -1) return prev;
+            const updated = [...prev.pageContentDTOS];
+            
+            updated[index] = { ...updated[index], customPoster: image.key.replace("poster-", "") };
+            
+
+            console.log({updated})
+
+            return { ...prev, pageContentDTOS: updated };
+        });
+
+        console.log(image.key.replace("poster-", ""))
+        let poster = image.key.replace("poster-", "")
+
+        fetch(`https://api.spectaer.com/watchlist/api/page-content/${content.id}/custom-poster?customPoster=${poster}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            },
+        }).catch(err => console.error("Error setting custom poster:", err));
+    }, []);
+
 
     const loadExternalRatings = async (tmdbId: string, title: string, type: string, contentId: number, onRatingsUpdated?: (ratings: any) => void) => {
         try {
@@ -654,7 +696,8 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         getExtendedDetails,
         getEpisodes,
         getRecommendedSection,
-        setUsername
+        setUsername,
+        setPoster
     }), [
         page,
         userPage,
@@ -677,7 +720,8 @@ export const ContentProvider = memo(function ContentProvider({ children }: { chi
         getExtendedDetails,
         getEpisodes,
         getRecommendedSection,
-        setUsername
+        setUsername,
+        setPoster
     ]);
 
     return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>

@@ -80,7 +80,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
             
                 <div className="absolute w-full h-full top-0 left-0 rounded-xl overflow-hidden -z-10">
                     <img
-                        src={`${content.posterPath}`.includes('https://image.tmdb.org') ? content.posterPath : `https://image.tmdb.org/t/p/w500/${content?.posterPath}`}
+                        src={`https://image.tmdb.org/t/p/w500/${content.customPoster !== null ? `https://image.tmdb.org/t/p/w500/${content.customPoster}` : content.posterPath}`}
                         style={{ width: '100%', height: "100%", zIndex: -1, opacity: 1, filter: "blur(15px)" }}
                     />
                 </div>
@@ -111,7 +111,7 @@ export const ContentCard = React.memo(function ContentCard({ content, onClick, o
 
                     <div className="relative rounded-xl overflow-hidden h-full">
                         {(content.posterPath && content.posterPath !== null) ? (
-                            <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} width={500} height={500} className="w-full h-full object-cover rounded-xl" alt={content.title || content.name} draggable={false} />
+                            <Image src={`https://image.tmdb.org/t/p/w500/${content.customPoster !== null ? `https://image.tmdb.org/t/p/w500/${content.customPoster}` : content.posterPath}`} width={500} height={500} className="w-full h-full object-cover rounded-xl" alt={content.title || content.name} draggable={false} />
                         ) : (
                             content.movies && (
                                 <div className="relative w-full h-full rounded-xl overflow-hidden">

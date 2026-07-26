@@ -12,7 +12,7 @@ import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { useAuth as useWorkOSAuth } from "@workos-inc/authkit-nextjs/components";
 import { GoChevronRight } from "react-icons/go";
-import { ImImages } from "react-icons/im";
+import { ImImages, ImInfo } from "react-icons/im";
 import useEmblaCarousel from 'embla-carousel-react'
 import CountryList from "country-list-with-dial-code-and-flag";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
@@ -32,7 +32,7 @@ const MAX_LOGO_HEIGHT = 100;
 export const ContentView = memo(function ContentView({ info, onClose, onClick, onBack }: ContentViewProps) {
     const { user } = useWorkOSAuth();
 
-    const { addContent, getExtendedDetails, getEpisodes, toggleWatched, removeContent } = useContent();
+    const { addContent, getExtendedDetails, getEpisodes, toggleWatched, removeContent, setPoster } = useContent();
 
     const [selectedContent, setSelectedContent] = useState<any>(null);
 
@@ -85,6 +85,8 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
     const [imageCarouselIndex, setImageCarouselIndex] = useState(0);
     const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" });
 
+    const [customPoster, setCustomPoster] = useState(null);
+
     const router = useRouter();
 
     useEffect(() => {
@@ -115,6 +117,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                 setInWatchlist(data.inWatchlist);
                 setWatched(data.watched);
                 setStarted(data.started);
+                setCustomPoster(data.customPoster);
 
                 const certification = details.release_dates?.results
                     ?.find((result: { iso_3166_1: string }) => result.iso_3166_1 === "US")
@@ -538,6 +541,16 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
         }, 0);
     }
 
+    const handleSetAsPoster = (id: number, image: any) => {
+        console.log(image)
+        let poster = image.key.replace("poster-", "")
+
+        setCustomPoster(poster)
+
+        setPoster(id, image)
+        
+    }
+
     return (
         <>
             <RippleExplosion
@@ -553,9 +566,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
             />
 
             <div className="absolute inset-0 rounded-2xl overflow-hidden -z-10">
-                {selectedContent?.posterPath && (
-                    <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
-                )}
+                <img src={`${customPoster !== null ? `https://image.tmdb.org/t/p/w500/${customPoster}` : `https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`}`} className="w-full h-full object-cover" style={{ opacity: 0.5, filter: "blur(30px)" }} />
             </div>
 
             {fullPoster && selectedContent?.posterPath && (
@@ -606,13 +617,37 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                         <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/70 shadow-2xl" ref={emblaRef}>
                             <div className="flex">
                                 {galleryItems.map((image) => (
-                                    <div key={image.key} className="min-w-full flex-[0_0_100%] p-6 sm:p-6 content-center">
+                                    <div key={image.key} className="relative min-w-full flex-[0_0_100%] p-6 sm:p-6 content-center">
                                         <img
                                             src={image.src}
                                             alt={`${selectedContent?.title} ${image.type}`}
                                             className="mx-auto max-h-[75vh] rounded-2xl object-contain"
                                         />
-                                        <p className="absolute bottom-0 w-full text-center text-sm font-semibold uppercase tracking-[0.2em] text-zinc-300">
+
+                                        {image.type === "Poster" && (
+                                            <div className="mt-4 text-center">
+                                                <button
+                                                    type="button"
+                                                    className="rounded-full bg-cyan-800/80 px-4 py-2 text-sm font-semibold text-white cursor-pointer transition hover:bg-cyan-700 active:bg-cyan-800/80 disabled:opacity-60 disabled:cursor-default"
+                                                    onClick={() => handleSetAsPoster(selectedContent.id, image)}
+                                                    disabled={customPoster !== null && `${image.src}`.includes(customPoster)}
+                                                >
+                                                    {customPoster !== null && `${image.src}`.includes(customPoster) ? (
+                                                        "You are using this poster"
+                                                    ) : (
+                                                        "Set as poster"
+                                                    )}
+                                                </button>
+                                                
+                                                <p className="mt-2 text-xs text-cyan-300">
+                                                    <ImInfo size={18} className="inline-block mr-2 -mt-0.5" />
+                                                    
+                                                    <span className="leading-none">The poster will be visible to all users only on your page</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        <p className="absolute left-1/2 bottom-0 -translate-x-1/2 text-center text-sm font-semibold uppercase tracking-[0.2em] text-zinc-300 px-3">
                                             {image.type}
                                         </p>
                                     </div>
@@ -750,7 +785,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                             onClick={() => setFullPoster(true)}
                             aria-label={`Open ${selectedContent?.title} poster in fullscreen`}
                         >
-                            <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
+                            <img src={`${customPoster !== null ? `https://image.tmdb.org/t/p/w500/${customPoster}` : `https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
                         </button>
 
                         <div className="flex gap-2 rounded-2xl overflow-hidden w-[60%]">
@@ -839,7 +874,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
                                 onClick={() => setFullPoster(true)}
                                 aria-label={`Open ${selectedContent?.title} poster in fullscreen`}
                             >
-                                <img src={`https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
+                                <img src={`${customPoster !== null ? `https://image.tmdb.org/t/p/w500/${customPoster}` : `https://image.tmdb.org/t/p/w500/${selectedContent?.posterPath}`}`} className="w-full h-full object-cover" alt={selectedContent?.title} />
                             </button>
 
                             <button
