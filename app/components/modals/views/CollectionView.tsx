@@ -23,7 +23,7 @@ export const CollectionView = memo(function CollectionView({ onClick, info, onCl
     useEffect(() => {
         if (!info.id || !info.type) return
 
-        fetch(`http://192.168.178.138:8080/api/collection/${info.id}`, {
+        fetch(`https://api.spectaer.com/watchlist/api/collection/${info.id}`, {
             "method": "GET"
         })
             .then(function (response) {

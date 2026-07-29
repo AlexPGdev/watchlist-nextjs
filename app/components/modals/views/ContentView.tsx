@@ -367,7 +367,7 @@ export const ContentView = memo(function ContentView({ info, onClose, onClick, o
             setSelectedRegion(region);
 
             const response1 = await fetch(
-                `http://192.168.178.138:8080/api/content/streaming-availability?id=${newContent?.id}&type=${`${(info.type)}`.toLowerCase()}`
+                `https://api.spectaer.com/watchlist/api/content/streaming-availability?id=${newContent?.id}&type=${`${(info.type)}`.toLowerCase()}`
             );
 
             const jwData = await response1.json();
