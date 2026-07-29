@@ -17,7 +17,7 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 export const PersonView = memo(function PersonView({ onClick, info, onClose, onBack }: PersonViewProps) {
 
-    const { getExtendedDetails } = useContent();
+    const { getExtendedDetails, getPerson } = useContent();
 
     const [ person, setPerson ] = useState<any>(null);
     const [ images, setImages ] = useState<any[]>([]);
@@ -25,6 +25,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
     const [ crew, setCrew ] = useState<any[]>([]);
     const [ rawUpcoming, setRawUpcoming ] = useState<any[]>([]);
     const [ upcoming, setUpcoming ] = useState<any[]>([]);
+    const [ seenThemIn, setSeenThemIn ] = useState<any[]>([]);
     const [ showMore, setShowMore ] = useState(false);
     const [ biographyShowMore, setBiographyShowMore ] = useState(false);
     const [fullPoster, setFullPoster] = useState(false);
@@ -41,12 +42,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
     useEffect(() => {
         if (!info.id || !info.type) return
 
-        fetch(`https://api.spectaer.com/watchlist/api/content/person/${info.id}`, {
-            "method": "GET"
-        })
-            .then(function (response) {
-                return response.json();
-            })
+        getPerson(info.id)
             .then(function (data) {
 
                 setPerson(data.details)
@@ -55,6 +51,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                 setCrew(data.details.combined_credits.crew)
                 setRawUpcoming(data.upcoming)
                 setUpcoming(data.upcoming)
+                setSeenThemIn(data.seenThemIn)
             })
     }, [info.id, info.type])
 
@@ -207,7 +204,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                     +{[...new Set(crew.filter(c => c.job !== "Thanks").map(c => c.job))].length - 2} more
                                 </button>
                             )}
-                        </div>``
+                        </div>
 
                         <div className="flex gap-6 justify-center mt-4 max-w-3/4 flex-wrap ml-auto mr-auto">
                             <div className="flex flex-col text-center">
@@ -266,7 +263,63 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
 
                     <div className="flex flex-col gap-1">
                         {person?.known_for_department === "Acting" && (
-                            <div>
+                            <div className="flex flex-col gap-1">
+                                {seenThemIn.length > 0 && (
+                                    <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
+                                        <div className="rounded-2xl overflow-visible">
+                                            <h1 className="uppercase text-md font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>You've seen them in</h1>
+                                            <div className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">
+                                                {(() => {
+                                                        const seen = new Map<number, { member: any; characters: { character: string, year: number }[]; }>();
+                                                        const result: any[] = [];
+                                        
+                                                        seenThemIn?.forEach((c) => {
+                                                            if (!seen.has(c.id)) {
+                                                                seen.set(c.id, { member: c, characters: [{ character: c.character, year: c.first_credit_air_date?.substring(0, 4) || c.release_date?.substring(0, 4) || "N/A" }] });
+                                                                result.push(seen.get(c.id));
+                                                            } else {
+                                                                seen.get(c.id)?.characters.push({ character: c.character, year: c.first_credit_air_date?.substring(0, 4) || c.release_date?.substring(0, 4) || "N/A" });
+                                                            }
+                                                        });
+                                        
+                                                    return result.filter(c => !`${c?.member.character}`.toLowerCase().includes('self') && `${c?.member.character}`.length > 0).map((c, i) => {
+                                                        return (
+                                                            <button key={i} className={`flex flex-col w-[100px] shrink-0 ${i === result.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c.member, c.member?.mediaType)}>
+                                                                <div className="flex rounded-lg shrink-0 overflow-hidden">
+                                                                    <img src={`https://image.tmdb.org/t/p/original/${c?.member?.poster_path}`} className="w-full h-full object-cover" alt={c?.member?.title || c?.member?.name} />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <p className="text-sm font-bold line-clamp-2 text-zinc-300">{c?.member?.title || c?.member?.name} ({c?.characters?.map((char: any) => char.year).sort((a: number, b: number) => a - b).join(", ")})</p>
+                                                                    {
+                                                                        c?.characters?.map((char: any) => char)
+                                                                            .sort((a: {year: number}, b: {year: number}) => a.year - b.year)
+                                                                            .map((char: any) => 
+                                                                                <div key={char.character} className="flex gap-1">
+                                                                                    <span
+                                                                                        className="flex h-[1lh] shrink-0 items-center text-sm"
+                                                                                        style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}
+                                                                                    >
+                                                                                        •
+                                                                                    </span>
+                                                                                    <p
+                                                                                        className="text-sm leading-none font-semibold items-center content-center line-clamp-2"
+                                                                                        style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}
+                                                                                    >
+                                                                                        {char.character}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )
+                                                                    }
+                                                                </div>
+                                                            </button>
+                                                        )
+                                                    })
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}  
+
                                 <h1 className="uppercase text-md font-semibold" style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}>Known for</h1>
                                 <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                     <div className="rounded-2xl overflow-hidden">
@@ -333,7 +386,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                             
                             
                                                     // return result.filter(c => !`${c?.member.character}`.toLowerCase().includes('self') && `${c?.member.character}`.length > 0).sort(compare).map((c, i) => {
-                                                    return getSortedCredits(result).slice(0, result.length >= 6 ? 6 : result.length).map((c: any, i: number) => {
+                                                    return getSortedCredits(result).map((c: any, i: number) => {
                                                         return (
                                                         <button key={i} className={`flex flex-col w-[100px] shrink-0 ${i === result.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c.member, c.member?.mediaType)}>
                                                             <div className="flex rounded-lg shrink-0 overflow-hidden">
@@ -353,7 +406,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                                                                     •
                                                                                 </span>
                                                                                 <p
-                                                                                    className="text-sm leading-none font-semibold"
+                                                                                    className="text-sm leading-none font-semibold items-center content-center line-clamp-2"
                                                                                     style={{ color: `rgba(${settings.primaryColorDark}, 1)` }}
                                                                                 >
                                                                                     {char.character}
@@ -380,7 +433,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                         <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <div className="rounded-2xl overflow-hidden">
                                                 <div className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">                                                
-                                                    {upcoming.sort((a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime()).slice(0, upcoming.length >= 6 ? 6 : upcoming.length).map((c, i) => (
+                                                    {upcoming.sort((a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime()).map((c, i) => (
                                                         <button key={i} className={`flex flex-col w-[100px] shrink-0 ${i === upcoming.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c, "movie")}>
                                                             <div className="flex rounded-lg shrink-0 overflow-hidden">
                                                                 <img src={`https://image.tmdb.org/t/p/original/${c?.poster_path}`} className="w-full h-full object-cover" alt={c?.title || c?.name} />
@@ -431,7 +484,7 @@ export const PersonView = memo(function PersonView({ onClick, info, onClose, onB
                                         <div className="relative flex flex-col text-zinc-200 text-md gap-1 rounded-2xl" style={{ textShadow: `2px 2px 2px rgba(0, 0, 0, 0.5)` }}>
                                             <div className="rounded-2xl overflow-hidden">
                                                 <div className="relative p-1 flex gap-2 overflow-x-scroll no-scrollbar">                                                
-                                                    {upcoming.sort((a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime()).slice(0, upcoming.length >= 6 ? 6 : upcoming.length).map((c, i) => (
+                                                    {upcoming.sort((a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime()).map((c, i) => (
                                                         <button key={i} className={`flex flex-col w-[100px] shrink-0 ${i === upcoming.length - 1 ? "mr-2" : ""} text-left cursor-pointer hover:scale-105 transition-all`} onClick={() => onClick && onClick(c, "movie")}>
                                                             <div className="flex rounded-lg shrink-0 overflow-hidden">
                                                                 <img src={`https://image.tmdb.org/t/p/original/${c?.poster_path}`} className="w-full h-full object-cover" alt={c?.title || c?.name} />

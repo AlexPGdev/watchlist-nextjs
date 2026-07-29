@@ -84,7 +84,7 @@ export default function Page() {
                             {profile?.watchlist?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
-                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
+                                    <Image src={(content.customPoster && content.customPoster !== null) ? `https://image.tmdb.org/t/p/w500/${content.customPoster}` : `https://image.tmdb.org/t/p/w500/${content.posterPath}` } className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>
@@ -101,7 +101,7 @@ export default function Page() {
                             {profile?.favorites?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
-                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
+                                    <Image src={(content.customPoster && content.customPoster !== null) ? `https://image.tmdb.org/t/p/w500/${content.customPoster}` : `https://image.tmdb.org/t/p/w500/${content.posterPath}` } className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>
@@ -118,7 +118,7 @@ export default function Page() {
                             {profile?.recentlyWatched?.map((content: any) => (
                                 <button key={content.id} className="max-w-[120px] cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={() => handleContentClick(content)}>
                                     {/* <img src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} /> */}
-                                    <Image src={`https://image.tmdb.org/t/p/w500/${content.posterPath}`} className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
+                                    <Image src={(content.customPoster && content.customPoster !== null) ? `https://image.tmdb.org/t/p/w500/${content.customPoster}` : `https://image.tmdb.org/t/p/w500/${content.posterPath}` } className="w-full h-full object-cover rounded-lg" alt={content.title} width={500} height={750} />
                                 </button>
                             ))}
                         </div>
